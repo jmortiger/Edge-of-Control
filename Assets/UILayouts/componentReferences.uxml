@@ -1,0 +1,9 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements">
+    <ui:Foldout text="References to my components" name="componentReferences" value="false">
+        <uie:ObjectField label="Collider:" binding-path="collider" type="UnityEngine.Collider2D, UnityEngine.Physics2DModule" name="collider" />
+        <uie:ObjectField label="PlayerInput:" binding-path="input" type="UnityEngine.InputSystem.PlayerInput, Unity.InputSystem" name="input" />
+        <uie:ObjectField label="Rb2D:" binding-path="rb" focusable="true" type="UnityEngine.Rigidbody2D, UnityEngine.Physics2DModule" name="rb" />
+        <uie:ObjectField label="Impulse Source" binding-path="impulseSource" name="impulseSource" type="Cinemachine.CinemachineImpulseSource, Cinemachine" />
+        <uie:ObjectField label="Sprite Renderer" allow-scene-objects="true" binding-path="spriteRenderer" name="spriteRenderer" type="UnityEngine.SpriteRenderer, UnityEngine.CoreModule" />
+    </ui:Foldout>
+</ui:UXML>

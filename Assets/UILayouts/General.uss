@@ -1,0 +1,12 @@
+.unity-foldout--depth-1 {
+    padding-left: 2.5%;
+}
+
+.unity-base-field__label {
+    min-width: 0;
+    flex-shrink: 2;
+    overflow: hidden;
+}
+
+.unity-base-field__input {
+}

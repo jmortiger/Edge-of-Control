@@ -45,8 +45,10 @@ namespace Assets.Scripts
 			positionsToCreate = new Queue<Vector3>();
 			activeEnemies = new List<Enemy>(defaultSize);
 			removalQueue = new List<Enemy>(7);
+			groundLayer.SetLayerMask(LayerMask.GetMask(new string[] { "Ground" }));
 		}
 
+		#region Used by Object Pool Directly
 		private ObjectPool<Enemy> pool;
 		public Queue<Vector3> positionsToCreate;
 		Enemy Create()
@@ -91,6 +93,7 @@ namespace Assets.Scripts
 			Destroy(enemy.gameObject);
 			Debug.Log($"Active: {pool.CountActive} | {activeEnemies.Count} Inactive:{pool.CountInactive}");
 		}
+		#endregion
 
 		void ResetPool()
 		{
@@ -99,12 +102,24 @@ namespace Assets.Scripts
 			Debug.Assert(activeEnemies.Count == 0);
 			positionsToCreate.Clear();
 		}
+
+		List<Enemy> removalQueue;
+		public void QueueRemoval(Enemy enemy) => removalQueue.Add(enemy);
 		#endregion
 
+		#region Inspector Fields
 		public GameObject enemyPrefab;
 		public new Camera camera;
 		public Player player;
-		private List<Enemy> activeEnemies;
+		[ContextMenu("Assign Scene References")]
+		void AssignSceneReferences()
+		{
+			camera = FindObjectOfType<Camera>();
+			player = FindObjectOfType<Player>();
+		}
+		#endregion
+		
+		List<Enemy> activeEnemies;
 
 		void Start()
 		{
@@ -123,6 +138,8 @@ namespace Assets.Scripts
 				pool.Get();
 		}
 
+		ContactFilter2D groundLayer = new();
+		RaycastHit2D[] groundHits = new RaycastHit2D[2];
 		void Update()
 		{
 			for (int i = 0; i < removalQueue.Count; i++)
@@ -149,18 +166,14 @@ namespace Assets.Scripts
 				//var spawnPosition = new Vector3(Random.Range(createMinX, createMaxX), player.transform.position.y/*enemyPrefab.transform.position.y*/, enemyPrefab.transform.position.z)/*player.transform.position.y*/;
 				//if (Physics2D.(spawnPosition, enemyPrefab.GetComponent<Enemy>().CollidersBounded.size), )
 				// TODO: Take height into account.
-				positionsToCreate.Enqueue(new Vector3(Random.Range(createMinX, createMaxX), enemyPrefab.transform.position.y, enemyPrefab.transform.position.z));
+				var spawnAttemptPosition = new Vector3(Random.Range(createMinX, createMaxX), enemyPrefab.transform.position.y, enemyPrefab.transform.position.z);
+				if (Physics2D.Raycast(spawnAttemptPosition, Vector2.down, groundLayer, groundHits) >= 1)
+					positionsToCreate.Enqueue(spawnAttemptPosition);
 			}
 
 			// While there are positions to create, create them.
 			while (positionsToCreate.Count > 0)
 				pool.Get();
-		}
-
-		List<Enemy> removalQueue;
-		public void QueueRemoval(Enemy enemy)
-		{
-			removalQueue.Add(enemy);
 		}
 	}
 

@@ -115,6 +115,10 @@ namespace Assets.Scripts
 			AssignComponentReferences();
 			AssignSceneReferences();
 		}
+		/// <summary>
+		/// Used to restore size after rolling.
+		/// </summary>
+		private Vector2 colliderInitialDimensions;
 		void Start()
 		{
 			enemyAndGround.SetLayerMask(LayerMask.GetMask(new string[] { "Ground", "Enemy" }));
@@ -125,6 +129,8 @@ namespace Assets.Scripts
 			aSource.loop = true;
 
 			StartShotgun();
+
+			colliderInitialDimensions = collider.bounds.size;
 		}
 		#endregion
 
@@ -141,8 +147,9 @@ namespace Assets.Scripts
 		public Vector2 constantMoveForce = new(5f, 1f);
 
 		public float rollSpeed = 3f;
-		float rollTimer = 0;
 		public float rollTimerLength = 1f;
+		public float stumbleTimerLength = 1f;
+		public float invincibleTimerLength = 1f;
 		#endregion
 		#region Jump Checks and Update
 		bool jumpPressedLastFrame = false;
@@ -183,10 +190,9 @@ namespace Assets.Scripts
 		}
 		[SerializeField]
 		CollisionState collisionState = CollisionState.None;
+		float rollTimer = 0;
 		float stumbleTimer = 0;
-		public float stumbleTimerLength = 1f;
 		float invincibleTimer = 0;
-		public float invincibleTimerLength = 1f;
 		#endregion
 		#region Collision Checking Members
 		ContactFilter2D enemyAndGround = new();
@@ -196,11 +202,21 @@ namespace Assets.Scripts
 		#endregion
 		[SerializeField] uint jumpPresses = 0;
 		public int combo = 0;
+
+		#region RollAnim Fields - controls the collider during the roll based of anim frame timings and dimensions
+		public float rollAnim_EntranceLengthRatio = 1f / 3f;
+		public float rollAnim_ProperLengthRatio = 1f / 3f;
+		public float rollAnim_ExitLengthRatio = 1f / 3f;
+		public float rollAnim_MinHeightRatio = .5f;
+		// TODO: Model function in inspector.
+		#endregion
+
 		// TODO: Expand timer and goalpost
 		// TODO: Make aerial movement different from grounded movement.
 		// TODO: Troubleshoot landing on enemies problem.
 		// TODO: Add combo timer
 		// TODO: Tweak wall run
+		// TODO: Check for refactors from Velocity to Cached Velocity.
 		void FixedUpdate()
 		{
 			if (JumpPressedOnThisFrame)
@@ -292,19 +308,23 @@ namespace Assets.Scripts
 					moveVector = moveVector.IsFinite() ? moveVector : BasicMovement();
 					aSource.clip = sfx_Running;
 					// TODO: Debug running sound & particle effect start and stop.
-					if (Velocity.x != 0 && collisionState.HasFlag(CollisionState.Ground))
+					// TODO: Combine this collisionState.HasFlag(CollisionState.Ground) check with the next one.
+					if (collisionState.HasFlag(CollisionState.Ground))
 					{
-						if (!aSource.isPlaying)
-							aSource.Play();
-						if (!particleSystem.isPlaying)
-							particleSystem.Play();
-					}
-					else if (Velocity.x == 0 && collisionState.HasFlag(CollisionState.Ground))
-					{
-						if (aSource.isPlaying)
-							aSource.Stop();
-						if (particleSystem.isPlaying)
-							particleSystem.Stop();
+						if (Velocity.x != 0)
+						{
+							if (!aSource.isPlaying)
+								aSource.Play();
+							if (!particleSystem.isPlaying)
+								particleSystem.Play();
+						}
+						else if (Velocity.x == 0)
+						{
+							if (aSource.isPlaying)
+								aSource.Stop();
+							if (particleSystem.isPlaying)
+								particleSystem.Stop();
+						}
 					}
 					//Debug.Log($"isPlaying:{aSource.isPlaying}");
 					if (!collisionState.HasFlag(CollisionState.Ground) && 
@@ -495,6 +515,7 @@ namespace Assets.Scripts
 						var c = spriteRenderer.color;
 						c.a = 1f;
 						spriteRenderer.color = c;
+						//collider.size = colliderInitialDimensions;
 						//Physics2D.IgnoreLayerCollision(LayerMask.NameToLayer("Default"), LayerMask.NameToLayer("Enemy"), false);
 						//movementState |= MovementState.Grounded;
 						movementState ^= MovementState.Rolling;
@@ -504,7 +525,7 @@ namespace Assets.Scripts
 				case MovementState.None:
 				default:
 				{
-					Debug.LogWarning("Player Movement State Failure!");
+					Debug.LogWarning("Player Movement State Failure, entering Grounded State.");
 					EnterGrounded();
 					goto case MovementState.Grounded;
 				}
@@ -551,8 +572,6 @@ namespace Assets.Scripts
 				var maxAdjusted = maxSafeFallSpeed * WARNING_RANGE;
 				var percentage = velAdjusted / maxAdjusted;
 				var outOf256 = Mathf.FloorToInt(Mathf.Lerp(255f, 0f, percentage));
-				//var maxFallSpeedIndicator = $"<color=#FF{outOf256:X2}{outOf256:X2}>";
-				//Debug.Log(maxFallSpeedIndicator);
 				speedText.text += $"<color=#FF{outOf256:X2}{outOf256:X2}>Y: {Velocity.y} u/s";
 			}
 			else
@@ -720,20 +739,32 @@ namespace Assets.Scripts
 		//	health 
 		//}
 
-
 		void OnRenderObject()
 		{
 			DrawPositionIndicator();
+			DrawAimingIndicators(true);
+		}
+
+		void DrawAimingIndicators(bool showSpreadRange)
+		{
+#if UNITY_EDITOR
+			MyGizmos.DrawLine3D(transform.position, transform.position + (Vector3)input.GetRightStickOrMouseValueAsJoystickEditor(transform.position) * 5f, Color.red);
+#else
 			MyGizmos.DrawLine3D(transform.position, transform.position + (Vector3)input.GetActionValueAsJoystick("Aim", transform.position));
-			MyGizmos.DrawLine3D(transform.position, transform.position + (Vector3)input.GetRightStickOrMouseValueAsJoystickEditor(transform.position), Color.red);
+#endif
 
-			var aimDirection = input.GetActionValueAsJoystick("Aim", transform.position);
-			MyGizmos.DrawLine3D(transform.position, transform.position + Quaternion.Euler(0, 0, sprayRangeDegrees / 2f) * aimDirection * 10f);
-			MyGizmos.DrawLine3D(transform.position, transform.position + Quaternion.Euler(0, 0, -sprayRangeDegrees / 2f) * aimDirection * 10f);
-
-			aimDirection = input.GetRightStickOrMouseValueAsJoystickEditor(transform.position);
-			MyGizmos.DrawLine3D(transform.position, transform.position + Quaternion.Euler(0, 0, sprayRangeDegrees / 2f) * aimDirection * 10f);
-			MyGizmos.DrawLine3D(transform.position, transform.position + Quaternion.Euler(0, 0, -sprayRangeDegrees / 2f) * aimDirection * 10f);
+			if (showSpreadRange)
+			{
+#if UNITY_EDITOR
+				var aimDirection = input.GetRightStickOrMouseValueAsJoystickEditor(transform.position);
+				MyGizmos.DrawLine3D(transform.position, transform.position + Quaternion.Euler(0, 0, sprayRangeDegrees / 2f) * aimDirection * 10f);
+				MyGizmos.DrawLine3D(transform.position, transform.position + Quaternion.Euler(0, 0, -sprayRangeDegrees / 2f) * aimDirection * 10f);
+#else
+				var aimDirection = input.GetActionValueAsJoystick("Aim", transform.position);
+				MyGizmos.DrawLine3D(transform.position, transform.position + Quaternion.Euler(0, 0, sprayRangeDegrees / 2f) * aimDirection * 10f);
+				MyGizmos.DrawLine3D(transform.position, transform.position + Quaternion.Euler(0, 0, -sprayRangeDegrees / 2f) * aimDirection * 10f);
+#endif
+			}
 		}
 
 		void DrawPositionIndicator()

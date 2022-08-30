@@ -32,6 +32,7 @@ namespace Assets.Scripts
 				return collidersBounded;
 			}
 		}
+		public Bounds presetBounds;
 		public AudioSource aSource;
 		//public AudioClip sfx_EnemyDeath;
 		public Animator animator;

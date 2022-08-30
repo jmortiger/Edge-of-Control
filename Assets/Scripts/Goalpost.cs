@@ -5,9 +5,9 @@ using UnityEngine;
 // TODO: Refactor to ScriptableObject
 namespace Assets.Scripts
 {
-	public class LevelData : MonoBehaviour
+	public class Goalpost : MonoBehaviour
 	{
-		public EventHandler GoalReached;
+		public event EventHandler GoalReached;
 
 		public float emptyClearTime = 26.68f;
 		public float timeLimitMultiplier = 1.75f;
@@ -47,15 +47,22 @@ namespace Assets.Scripts
 		//	timerText = timerText != null ? timerText : (GameObject.Find("TimerDisplay") ?? GameObject.Find("Timer")).GetComponent<TMP_Text>();
 		//}
 
+		public void ResetTime() => myTime = 0;
+
+		float myTime = 0;
 		bool cleared = false;
 		bool clearedInTime = false;
-
+		[Range(2, 10)]
+		public int timerCharLength = 6;
 		void Update()
 		{
-			timerText.text = ("" + (PlayerTimeLimit - Time.timeSinceLevelLoad)).Substring(0, 4) + "s";
-			if (cleared && Time.timeSinceLevelLoad <= PlayerTimeLimit)
+			myTime += Time.deltaTime;
+			timerText.text = ((PlayerTimeLimit - /*Time.timeSinceLevelLoad*/myTime).ToString().Length < timerCharLength - 1) ?
+				PlayerTimeLimit - /*Time.timeSinceLevelLoad*/myTime + "s" :
+				("" + (PlayerTimeLimit - /*Time.timeSinceLevelLoad*/myTime)).Substring(0, timerCharLength - 1) + "s";
+			if (cleared && /*Time.timeSinceLevelLoad*/myTime <= PlayerTimeLimit)
 				clearedInTime = true;
-			if (!clearedInTime && Time.timeSinceLevelLoad > PlayerTimeLimit)
+			if (!clearedInTime && /*Time.timeSinceLevelLoad*/myTime > PlayerTimeLimit)
 			{
 				Debug.LogWarning($"Failed to clear level in expected {PlayerTimeLimit} seconds.");
 				timerText.color = Color.red;

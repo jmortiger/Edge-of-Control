@@ -5,8 +5,11 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using Random = UnityEngine.Random;
 
+using Assets.ScriptableObjects;
 using Assets.Scripts.Utility;
+using System.Collections.Generic;
 // TODO: Trim inspector stuff, handled in UIDocument.
+// TODO: Modify UIDocument to reflect new fields.
 namespace Assets.Scripts
 {
 	[RequireComponent(
@@ -17,9 +20,9 @@ namespace Assets.Scripts
 	public class Player : MonoBehaviour
 	{
 		#region Component References
-		[Header("References to my own components.")]
 		[SerializeField]
 		new Collider2D collider;
+		CapsuleCollider2D MyCapsule { get => (CapsuleCollider2D)collider; }
 		public PlayerInput input;
 		public Rigidbody2D rb;
 		[SerializeField]
@@ -49,43 +52,10 @@ namespace Assets.Scripts
 		public TMP_Text scoreText;
 		public DamageIndicator damageIndicator;
 		#endregion
-		// TODO: Refactor Camera Ortho Changer (ScriptableObject probably).
-		#region Camera Orthographic Size
-		[Header("Camera Orthographic Size Settings")]
-		[Header("OrthoSize = i - 1 + b^(deltaD * s)")]
+
 		public CinemachineVirtualCamera myCam;
 		public Camera cam;
-		public bool isOrthographicSizeFunctionActive = false;
-		[InspectorName("(i)nitial Orthographic Size")]
-		[Range(1, 50)]
-		public float initialCameraOrthographicSize = 5f;
-		[InspectorName("(s)cale Distance from Ground")]
-		//[Tooltip("Scales orthograpic size as speed increases.")]
-		[Range(0, 1)]
-		public float scaleDistance = 1;
-		[InspectorName("(b)ase for Orthographic Size Function")]
-		[Range(1, 1.5f)]
-		public float baseForCamSizeFunction = 1.25f;
-		public float OrthographicSizeFunction(float x)
-		{
-			return initialCameraOrthographicSize - 1 + Mathf.Pow(baseForCamSizeFunction, x * scaleDistance);
-		}
-		public float GetNewOrthographicSize()
-		{
-			if (Velocity.magnitude > 1)
-			{
-				var rcResults = new RaycastHit2D[1];
-				var numResults = Physics2D.Raycast(transform.position, Vector2.down, groundLayer, rcResults);
-				float dist = 0;
-				if (numResults > 0/* && rcResults[0].distance > 1*/)
-					dist = rcResults[0].distance;
-				// f(x) = initialCameraOrthographicSize - 1 + orthographicSizeFunctionBase ^ (dist * scaleDistance)
-				return initialCameraOrthographicSize - 1 + Mathf.Pow(baseForCamSizeFunction, dist * scaleDistance);
-			}
-			else
-				return myCam.m_Lens.OrthographicSize;
-		}
-		#endregion
+		public CameraSettings cameraSettings;
 
 		[ContextMenu("Assign Scene References")]
 		void AssignSceneReferences()
@@ -100,6 +70,11 @@ namespace Assets.Scripts
 		public Vector2 Velocity { get => rb.velocity; }
 		Vector2 cachedVelocity;
 		public Vector2 CachedVelocity { get => cachedVelocity; }
+		Vector2 preCollisionVelocity;
+		/// <summary>
+		/// Updated at the end of FixedUpdate (same as <see cref="CachedVelocity"/>), but also updated in <see cref="OnCollisionEnter2D(Collision2D)"/>.
+		/// </summary>
+		public Vector2 PreCollisionVelocity { get => preCollisionVelocity; }
 		#region SFX
 		public AudioClip sfx_Running;
 		public AudioClip sfx_Jump;
@@ -135,15 +110,25 @@ namespace Assets.Scripts
 		#endregion
 
 		#region Movement Settings
-		[Space()]
-		[Header("Movement Settings")]
-		[Tooltip("The force applied when using the movement actions.")]
+		//[Tooltip("The force applied when using the movement actions.")]
+		//[Tooltip("\"Endless Runner Mode\". Apply a constant displacement and use a different move force.")]
+		//[Tooltip("The constant displacement applied under endless runner mode.")]
+		//[Tooltip("The force applied when using the movement actions if endless runner mode is on.")]
+		/// <summary>
+		/// The force applied when using the movement actions.
+		/// </summary>
 		public Vector2 moveForce = new(1f, 1f);
-		[Tooltip("\"Endless Runner Mode\". Apply a constant displacement and use a different move force.")]
+		/// <summary>
+		/// "Endless Runner Mode". Apply a constant displacement and use a different move force.
+		/// </summary>
 		public bool isConstantMovementEnabled = false;
-		[Tooltip("The constant displacement applied under endless runner mode.")]
+		/// <summary>
+		/// The constant displacement applied under endless runner mode.
+		/// </summary>
 		public Vector2 constantMovementDisplacement = new(5f, 0f);
-		[Tooltip("The force applied when using the movement actions if endless runner mode is on.")]
+		/// <summary>
+		/// The force applied when using the movement actions if endless runner mode is on.
+		/// </summary>
 		public Vector2 constantMoveForce = new(5f, 1f);
 
 		public float rollSpeed = 3f;
@@ -190,6 +175,7 @@ namespace Assets.Scripts
 		}
 		[SerializeField]
 		CollisionState collisionState = CollisionState.None;
+		bool rollRight = true;
 		float rollTimer = 0;
 		float stumbleTimer = 0;
 		float invincibleTimer = 0;
@@ -208,7 +194,6 @@ namespace Assets.Scripts
 		public float rollAnim_ProperLengthRatio = 1f / 3f;
 		public float rollAnim_ExitLengthRatio = 1f / 3f;
 		public float rollAnim_MinHeightRatio = .5f;
-		// TODO: Model function in inspector.
 		#endregion
 
 		// TODO: Expand timer and goalpost
@@ -217,6 +202,7 @@ namespace Assets.Scripts
 		// TODO: Add combo timer
 		// TODO: Tweak wall run
 		// TODO: Check for refactors from Velocity to Cached Velocity.
+		// TODO: Add coil jump
 		void FixedUpdate()
 		{
 			if (JumpPressedOnThisFrame)
@@ -294,6 +280,7 @@ namespace Assets.Scripts
 				movementState |= MovementState.Rolling;
 				particleSystem.Play(true);
 				rollTimer = rollTimerLength;
+				rollRight = Velocity.x > 0;
 				AddUIMessage("Successful PK Roll");
 			}
 			#endregion
@@ -355,9 +342,18 @@ namespace Assets.Scripts
 							vel.y *= -1;
 							rb.velocity = vel;
 							rb.velocity *= conservedVelocity;
-							currentEnemyCollision?.OnPlayerStomp();
+
+							// This process seems to automatically clear currentEnemyCollisions due
+							// to the deactivation of enemy colliders further down the chain. If
+							// the following assert fails, check there.
+							int lengthBefore = currentEnemyCollisions.Count;
+							var temp = currentEnemyCollisions.ToArray();
+							for (int i = 0; i < temp.Length; i++)
+								temp[i]?.OnPlayerStomp();
+							Debug.Assert(lengthBefore > currentEnemyCollisions.Count);
+							UpdateScore((lengthBefore - currentEnemyCollisions.Count) * 200);
+
 							AddUIMessage("Enemy Bounce");
-							UpdateScore(200);
 							combo++;
 						}
 						var fApplied = Vector2.Scale(moveVector, jumpForce);
@@ -365,7 +361,7 @@ namespace Assets.Scripts
 						aSource.Stop();
 						particleSystem.Emit(30);
 						particleSystem.Stop();
-						aSource.PlayOneShot(/*sfx_Jump*/sfx_group_Jump.GetClip());
+						aSource.PlayOneShot(/*sfx_Jump*/sfx_group_Jump.GetRandomClip());
 						movementState |= MovementState.Jumping;
 						movementState ^= MovementState.Grounded;
 					}
@@ -501,24 +497,47 @@ namespace Assets.Scripts
 				case MovementState.Rolling:
 				{
 					//moveVector = moveVector.IsFinite() ? moveVector : BasicMovement();
-					transform.position += new Vector3(rollSpeed * Time.fixedDeltaTime, 0f, 0f);
+					transform.position += new Vector3(rollSpeed * Time.fixedDeltaTime * (rollRight ? 1 : -1), 0f, 0f);
 					rollTimer -= Time.fixedDeltaTime;
-					if (collisionState.HasFlag(CollisionState.EnemyCollider))//rb.OverlapCollider(enemyLayer, enemyCollidersOverlapped) <= 0)
+					if (collisionState.HasFlag(CollisionState.EnemyCollider))
 					{
+						MyCapsule.size = colliderInitialDimensions;
+
+						// TODO: Remove when using animations
+						var srb = spriteRenderer.bounds;
+						srb.size = new Vector3(colliderInitialDimensions.x, colliderInitialDimensions.y, srb.size.z);
+						spriteRenderer.bounds = srb;
+
 						movementState ^= MovementState.Rolling;
 						EnterStumble();
 						break;
 					}
 					else if (rollTimer <= 0f/* || (rb.OverlapCollider(enemyLayer, enemyCollidersOverlapped) <= 0 && collisionState.HasFlag(CollisionState.Ground))*/)
 					{
-						//AddUIMessage("Back up!");
-						var c = spriteRenderer.color;
-						c.a = 1f;
-						spriteRenderer.color = c;
-						//collider.size = colliderInitialDimensions;
-						//Physics2D.IgnoreLayerCollision(LayerMask.NameToLayer("Default"), LayerMask.NameToLayer("Enemy"), false);
+						MyCapsule.size = colliderInitialDimensions;
+						
+						// TODO: Remove when using animations
+						var srb = spriteRenderer.bounds;
+						srb.size = new Vector3(colliderInitialDimensions.x, colliderInitialDimensions.y, srb.size.z);
+						spriteRenderer.bounds = srb;
+						
 						//movementState |= MovementState.Grounded;
 						movementState ^= MovementState.Rolling;
+						break;
+					}
+					else
+					{
+						rollTimer = (rollTimer < 0) ? 0 : rollTimer;
+						var h = (rollTimer > rollTimerLength / 2) ? 
+							Mathf.SmoothStep(colliderInitialDimensions.y * rollAnim_MinHeightRatio, colliderInitialDimensions.y, (rollTimer / (rollTimerLength / 2)) - 1) : 
+							Mathf.SmoothStep(colliderInitialDimensions.y, colliderInitialDimensions.y * rollAnim_MinHeightRatio, rollTimer / (rollTimerLength / 2));
+						
+						MyCapsule.size = new(colliderInitialDimensions.x, h);
+
+						// TODO: Remove when using animations
+						var srb = spriteRenderer.bounds;
+						srb.size = new Vector3(colliderInitialDimensions.x, h, srb.size.z);
+						spriteRenderer.bounds = srb;
 					}
 					break;
 				}
@@ -533,8 +552,9 @@ namespace Assets.Scripts
 
 			#region After movement is handled
 			// Change Cam Size
-			if (isOrthographicSizeFunctionActive)
-				myCam.m_Lens.OrthographicSize = GetNewOrthographicSize();
+			myCam.m_Lens.OrthographicSize = cameraSettings.isOrthographicSizeFunctionActive ? 
+				cameraSettings.GetNewOrthographicSize(Velocity, transform.position, groundLayer) :
+				cameraSettings.defaultOrthographicSize;
 
 			// Update speed display after application of forces.
 			UpdateSpeedText();
@@ -547,7 +567,7 @@ namespace Assets.Scripts
 
 			UpdateShotgun();
 
-			cachedVelocity = Velocity;
+			cachedVelocity = preCollisionVelocity = Velocity;
 			#endregion
 		}
 
@@ -688,6 +708,8 @@ namespace Assets.Scripts
 			for (int i = 0; i < pellets.Length; i++)
 			{
 				pellets[i] = Instantiate(pellet, Vector3.zero, Quaternion.identity);
+				//UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(pellets[i], UnityEngine.SceneManagement.SceneManager.GetSceneByName("GameSceneAdditive"));
+				FindObjectOfType<MySceneManager>().MoveToScene(pellets[i], "GameSceneAdditive");
 				var tr = pellets[i].GetComponent<TrailRenderer>();
 				tr.time = fireRateLength;
 				tr.emitting = tr.enabled = false;
@@ -783,9 +805,7 @@ namespace Assets.Scripts
 		}
 
 		#region Collision Stuff
-		Enemy currentEnemyCollision;
-		Enemy[] currentEnemyCollisions;
-		float enemyCollisionTime = 0f;
+		List<Enemy> currentEnemyCollisions = new List<Enemy>(3);
 		#endregion
 		#region Jump Stuff
 		public Vector2 jumpForce = new(.5f, 15f);
@@ -800,40 +820,33 @@ namespace Assets.Scripts
 		private float wallrunStartDir = 0;
 		#endregion
 
+		// TODO: Modify to use switches
 		#region OnCollision
+		// TODO: Resolve bad wall jumping (check collider.max against collided.min and vice versa)
 		void OnCollisionEnter2D(Collision2D collision)
 		{
-			if (collision.collider.gameObject.layer == LayerMask.NameToLayer("Enemy"))
+			if (collision.gameObject.layer == LayerMask.NameToLayer("Enemy"))
 			{
 				collisionState |= CollisionState.EnemyCollider;
-				currentEnemyCollision = collision.collider.GetComponent<Enemy>();
+				currentEnemyCollisions.Add(collision.gameObject.GetComponent<Enemy>());
 			}
 			else if (collision.gameObject.layer == LayerMask.NameToLayer("Ground"))
 				collisionState |= CollisionState.Ground;
-			//if (/*Velocity.y < maxSafeFallSpeed*/true)
-			//{
-			//	AddUIMessage("Stumbled...");
-			//	rb.velocity = new Vector2(rb.velocity.x, maxSafeFallSpeed);
-			//}
 		}
 		void OnCollisionStay2D(Collision2D collision)
 		{
-			if (collision.collider.gameObject.layer == LayerMask.NameToLayer("Enemy"))
-			{
-				enemyCollisionTime += Time.deltaTime;
+			if (collision.gameObject.layer == LayerMask.NameToLayer("Enemy"))
 				collisionState |= CollisionState.EnemyCollider;
-			}
 			else if (collision.gameObject.layer == LayerMask.NameToLayer("Ground"))
 				collisionState |= CollisionState.Ground;
 		}
 		void OnCollisionExit2D(Collision2D collision)
 		{
-			if (collision.collider.gameObject.layer == LayerMask.NameToLayer("Enemy"))
+			if (collision.gameObject.layer == LayerMask.NameToLayer("Enemy"))
 			{
-				enemyCollisionTime = 0f;
 				collisionState |= CollisionState.EnemyCollider;
 				collisionState ^= CollisionState.EnemyCollider;
-				currentEnemyCollision = null;
+				currentEnemyCollisions.Remove(collision.gameObject.GetComponent<Enemy>());
 			}
 			else if (collision.gameObject.layer == LayerMask.NameToLayer("Ground"))
 			{
@@ -848,56 +861,43 @@ namespace Assets.Scripts
 			if (collision.gameObject.layer == LayerMask.NameToLayer("Enemy"))
 			{
 				collisionState |= CollisionState.EnemyTrigger;
-				currentEnemyCollision = collision.GetComponent<Enemy>();
+				currentEnemyCollisions.Add(collision.GetComponent<Enemy>());
 			}
 			else if (collision.gameObject.layer == LayerMask.NameToLayer("BGInteractable"))
 				collisionState |= CollisionState.BGWall;
-			else if (collision.gameObject.layer == LayerMask.NameToLayer("Ground"))
-				collisionState |= CollisionState.Ground;
+			//else if (collision.gameObject.layer == LayerMask.NameToLayer("Ground"))
+			//	collisionState |= CollisionState.Ground;
 			else if (collision.gameObject.layer == LayerMask.NameToLayer("Goal"))
 				Debug.Log($"Finished with time of {Time.timeSinceLevelLoad}");
 		}
 		void OnTriggerStay2D(Collider2D collision)
 		{
 			if (collision.gameObject.layer == LayerMask.NameToLayer("Enemy"))
-			{
-				enemyCollisionTime += Time.deltaTime;
 				collisionState |= CollisionState.EnemyTrigger;
-			}
 			else if (collision.gameObject.layer == LayerMask.NameToLayer("BGInteractable"))
 				collisionState |= CollisionState.BGWall;
-			else if (collision.gameObject.layer == LayerMask.NameToLayer("Ground"))
-				collisionState |= CollisionState.Ground;
+			//else if (collision.gameObject.layer == LayerMask.NameToLayer("Ground"))
+			//	collisionState |= CollisionState.Ground;
 		}
 		void OnTriggerExit2D(Collider2D collision)
 		{
 			if (collision.gameObject.layer == LayerMask.NameToLayer("Enemy"))
 			{
-				enemyCollisionTime = 0f;
 				collisionState |= CollisionState.EnemyTrigger;
 				collisionState ^= CollisionState.EnemyTrigger;
-				currentEnemyCollision = null;
+				currentEnemyCollisions.Remove(collision.GetComponent<Enemy>());
 			}
 			else if (collision.gameObject.layer == LayerMask.NameToLayer("BGInteractable"))
 			{
 				collisionState |= CollisionState.BGWall;
 				collisionState ^= CollisionState.BGWall;
 			}
-			else if (collision.gameObject.layer == LayerMask.NameToLayer("Ground"))
-			{
-				collisionState |= CollisionState.Ground;
-				collisionState ^= CollisionState.Ground;
-			}
+			//else if (collision.gameObject.layer == LayerMask.NameToLayer("Ground"))
+			//{
+			//	collisionState |= CollisionState.Ground;
+			//	collisionState ^= CollisionState.Ground;
+			//}
 		}
 		#endregion
-		//private void TestVector2Scale()
-		//{
-		//	Debug.Log($"Velocity: {Velocity}");
-		//	//rb.velocity.Scale(new Vector2(1, -1)); // Doesn't produce desired behaviour - why?
-		//	var vel = Velocity;
-		//	vel.y *= -1;
-		//	rb.velocity = vel;
-		//	Debug.Log($"VelocityNew: {Velocity}");
-		//}
 	}
 }

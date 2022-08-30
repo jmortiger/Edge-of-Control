@@ -25,7 +25,7 @@ namespace Assets.Scripts
 			DontDestroyOnLoad(this);
 			if (instance == null)
 				instance = this;
-			if (instance != this)
+			else if (instance != this)
 			{
 				Destroy(gameObject);
 				return;
@@ -45,7 +45,6 @@ namespace Assets.Scripts
 			positionsToCreate = new Queue<Vector3>();
 			activeEnemies = new List<Enemy>(defaultSize);
 			removalQueue = new List<Enemy>(7);
-			groundLayer.SetLayerMask(LayerMask.GetMask(new string[] { "Ground" }));
 		}
 
 		#region Used by Object Pool Directly
@@ -54,6 +53,7 @@ namespace Assets.Scripts
 		Enemy Create()
 		{
 			var newEnemy = Instantiate(enemyPrefab);
+			//FindObjectOfType<MySceneManager>().MoveToScene(newEnemy);
 			newEnemy.name = $"Enemy {activeEnemies.Count}";
 			var newEnemyComponent = newEnemy.GetComponent<Enemy>();
 			return newEnemyComponent;
@@ -120,7 +120,7 @@ namespace Assets.Scripts
 		#endregion
 		
 		List<Enemy> activeEnemies;
-
+		Bounds enemyDimensions;
 		void Start()
 		{
 			// Start with "defaultSize" enemies 1-2 screenlength to the right.
@@ -128,17 +128,24 @@ namespace Assets.Scripts
 			var createMinX = camBounds.min.x + camBounds.size.x;
 			var createMaxX = camBounds.max.x + camBounds.size.x * 2f;
 			while (positionsToCreate.Count < defaultSize)
-				positionsToCreate.Enqueue(new Vector3(Random.Range(createMinX, createMaxX), enemyPrefab.transform.position.y, enemyPrefab.transform.position.z));
+				positionsToCreate.Enqueue(GenerateSAP(createMinX, createMaxX, enemyPrefab.transform.position.y, enemyPrefab.transform.position.z));
+			while (positionsToCreate.Count > 0)
+				pool.Get();
 
 			if (player == null)
 				player = FindObjectOfType<Player>();
 
-			// While there are positions to create, create them.
-			while (positionsToCreate.Count > 0)
-				pool.Get();
+			enemyDimensions = enemyPrefab.GetComponent<Enemy>()./*CollidersBounded*/presetBounds; // TODO: Figure this problem out
+			groundLayer.SetLayerMask(LayerMask.GetMask(new string[] { "Ground" }));
+			allButNonCollidingAndEnemyLayer.SetLayerMask(LayerMask.GetMask(new string[] { "Ground", "Default", "Player" }));
+
+			FindObjectOfType<Goalpost>().GoalReached += EnemyManager_GoalReached;
 		}
 
+		void EnemyManager_GoalReached(object sender, System.EventArgs e) => ResetPool();
+
 		ContactFilter2D groundLayer = new();
+		ContactFilter2D allButNonCollidingAndEnemyLayer = new();
 		RaycastHit2D[] groundHits = new RaycastHit2D[2];
 		void Update()
 		{
@@ -161,20 +168,52 @@ namespace Assets.Scripts
 			// If there is space, try to create new enemies .5 screenlengths ahead.
 			var createMinX = camBounds.max.x + camBounds.extents.x;
 			var createMaxX = createMinX + camBounds.size.x;
-			while (pool.CountInactive > positionsToCreate.Count)
+			// If enemies can't be spawned (i.e at the edge of the level), the loop guard stops an infinite loop.
+			int loopGuard = 30;
+			while (pool.CountInactive > positionsToCreate.Count && loopGuard > 0)
 			{
-				//var spawnPosition = new Vector3(Random.Range(createMinX, createMaxX), player.transform.position.y/*enemyPrefab.transform.position.y*/, enemyPrefab.transform.position.z)/*player.transform.position.y*/;
-				//if (Physics2D.(spawnPosition, enemyPrefab.GetComponent<Enemy>().CollidersBounded.size), )
-				// TODO: Take height into account.
-				var spawnAttemptPosition = new Vector3(Random.Range(createMinX, createMaxX), enemyPrefab.transform.position.y, enemyPrefab.transform.position.z);
-				if (Physics2D.Raycast(spawnAttemptPosition, Vector2.down, groundLayer, groundHits) >= 1)
-					positionsToCreate.Enqueue(spawnAttemptPosition);
+				var spawnAttemptPosition = GenerateSAP(createMinX, createMaxX, player/*enemyPrefab*/.transform.position.y, enemyPrefab.transform.position.z);
+				// TODO: Throughly test then trim upcoming section
+				if (Physics2D.Raycast(spawnAttemptPosition, Vector2.down, groundLayer, groundHits, 200f) >= 1)
+				{
+					// Try to put it just over the ground.
+					spawnAttemptPosition.y = groundHits[0].point.y + enemyPrefab.GetComponent<Enemy>()./*CollidersBounded*/presetBounds.extents.y + 1;
+					enemyDimensions.center = spawnAttemptPosition;
+
+					var overlaps = Physics2D.OverlapBoxAll(spawnAttemptPosition, enemyPrefab.GetComponent<Enemy>().presetBounds.size, 0, groundLayer.layerMask);
+					if (overlaps.Length > 0 || groundHits[0].collider.ClosestPoint(spawnAttemptPosition) == (Vector2)spawnAttemptPosition)
+					{
+						if (Physics2D.Raycast(spawnAttemptPosition, Vector2.up, groundLayer, groundHits) >= 1)
+						{
+							spawnAttemptPosition.y = groundHits[0].point.y + enemyPrefab.GetComponent<Enemy>()./*CollidersBounded*/presetBounds.extents.y + 1;
+							enemyDimensions.center = spawnAttemptPosition;
+						}
+					}
+					if (groundHits[0].collider.ClosestPoint(spawnAttemptPosition) == (Vector2)spawnAttemptPosition)
+						Debug.LogWarning($"Spawning inside ground.");
+					// Check SAP didn't get pushed onscreen. If it did, spawn is cancelled.
+					if (!enemyDimensions.Intersects(camBounds))
+						positionsToCreate.Enqueue(spawnAttemptPosition);
+					else
+						loopGuard--;
+				}
+				else
+					loopGuard--;
 			}
 
 			// While there are positions to create, create them.
 			while (positionsToCreate.Count > 0)
 				pool.Get();
 		}
-	}
 
+		/// <summary>
+		/// Generates a random spawn attempt position.
+		/// </summary>
+		/// <param name="xMin"></param>
+		/// <param name="xMax"></param>
+		/// <param name="y"></param>
+		/// <param name="z"></param>
+		/// <returns></returns>
+		Vector3 GenerateSAP(float xMin, float xMax, float y, float z) => new(Random.Range(xMin, xMax), y, z);
+	}
 }

@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Assets.Scripts
+namespace Assets.ScriptableObjects
 {
     [CreateAssetMenu(fileName = "sfxs_NewGroup", menuName = "ScriptableObjects/SFX_Group")]
     public class SFX_Group : ScriptableObject
@@ -13,7 +13,7 @@ namespace Assets.Scripts
         /// Gets a random <see cref="AudioClip"/> from <see cref="sfxs"/>.
         /// </summary>
         /// <returns>A random <see cref="AudioClip"/> from <see cref="sfxs"/>.</returns>
-        public AudioClip GetClip()
+        public AudioClip GetRandomClip()
 		{
             if (sfxs.Length == 0)
 			{

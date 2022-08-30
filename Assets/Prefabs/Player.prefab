@@ -13,13 +13,13 @@ GameObject:
   - component: {fileID: 1492775944482201793}
   - component: {fileID: 1492775944482201794}
   - component: {fileID: 1492775944482201791}
-  - component: {fileID: 1492775944482201784}
   - component: {fileID: 1492775944482201785}
   - component: {fileID: 1492775944482201788}
   - component: {fileID: 1492775944482201795}
   - component: {fileID: 1492775944482201792}
   - component: {fileID: 1492775944482201798}
   - component: {fileID: 1492775944482201799}
+  - component: {fileID: 868920642996841978}
   m_Layer: 9
   m_Name: Player
   m_TagString: Untagged
@@ -54,7 +54,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 54545cfa05230f6479328fc5d0980770, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  collider: {fileID: 1492775944482201784}
+  collider: {fileID: 868920642996841978}
   input: {fileID: 1492775944482201788}
   rb: {fileID: 1492775944482201791}
   impulseSource: {fileID: 1492775944482201793}
@@ -67,10 +67,7 @@ MonoBehaviour:
   damageIndicator: {fileID: 0}
   myCam: {fileID: 0}
   cam: {fileID: 0}
-  isOrthographicSizeFunctionActive: 0
-  initialCameraOrthographicSize: 5
-  scaleDistance: 0.75
-  baseForCamSizeFunction: 1.15
+  cameraSettings: {fileID: 11400000, guid: a174d85549edd9346b4feea42eda8a1c, type: 2}
   sfx_Running: {fileID: 8300000, guid: 040986a85721306458f29894ecb1f8ff, type: 3}
   sfx_Jump: {fileID: 8300000, guid: f91916e225955504d9687eb72bdda8f8, type: 3}
   sfx_Hurt: {fileID: 8300000, guid: cce66c38dda87d341a888e6c8dfe9702, type: 3}
@@ -236,32 +233,6 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 4
---- !u!61 &1492775944482201784
-BoxCollider2D:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1492775944482201786}
-  m_Enabled: 1
-  m_Density: 1
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_UsedByEffector: 0
-  m_UsedByComposite: 0
-  m_Offset: {x: 0, y: 0}
-  m_SpriteTilingProperty:
-    border: {x: 0, y: 0, z: 0, w: 0}
-    pivot: {x: 0.5, y: 0.5}
-    oldSize: {x: 1, y: 1}
-    newSize: {x: 1, y: 2}
-    adaptiveTilingThreshold: 0.5
-    drawMode: 2
-    adaptiveTiling: 0
-  m_AutoTiling: 1
-  serializedVersion: 2
-  m_Size: {x: 1, y: 1}
-  m_EdgeRadius: 0
 --- !u!212 &1492775944482201785
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -5411,3 +5382,19 @@ ParticleSystemRenderer:
   m_MeshWeighting2: 1
   m_MeshWeighting3: 1
   m_MaskInteraction: 0
+--- !u!70 &868920642996841978
+CapsuleCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1492775944482201786}
+  m_Enabled: 1
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_UsedByEffector: 0
+  m_UsedByComposite: 0
+  m_Offset: {x: 0, y: 0}
+  m_Size: {x: 1, y: 2}
+  m_Direction: 0

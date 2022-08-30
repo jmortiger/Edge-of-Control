@@ -10,14 +10,16 @@
         <uie:ObjectField label="scoreText" binding-path="scoreText" name="scoreText" type="TMPro.TMP_Text, Unity.TextMeshPro" />
         <uie:ObjectField label="Damage Indicator" type="Assets.Scripts.DamageIndicator, Assembly-CSharp" binding-path="damageIndicator" name="damageIndicator" />
     </ui:Foldout>
-    <ui:Foldout text="Camera Orthographic Size" name="camSettings" tooltip="Scales orthograpic size as speed increases." value="false">
+    <ui:Foldout text="Camera Orthographic Size" name="camSettings" tooltip="Scales orthograpic size as speed increases." value="true">
         <uie:ObjectField label="My Cam:" binding-path="myCam" type="Cinemachine.CinemachineVirtualCamera, Cinemachine" name="myCam" />
         <uie:ObjectField label="Unity Cam:" binding-path="cam" type="UnityEngine.Camera, UnityEngine.CoreModule" name="cam" />
-        <ui:Toggle label="Is Orthographic Size Function Active?" value="false" binding-path="isOrthographicSizeFunctionActive" name="isOrthographicSizeFunctionActive" />
+        <uie:ObjectField label="Camera Settings" allow-scene-objects="false" type="Assets.ScriptableObjects.CameraSettings, Assembly-CSharp" name="cameraSettings" binding-path="cameraSettings" />
+        <ui:Slider picking-mode="Ignore" label="defaultOrthographicSize:" value="5" high-value="50" tooltip="i" low-value="1" binding-path="cameraSettings.defaultOrthographicSize" show-input-field="true" name="defaultOrthographicSize" />
+        <ui:Toggle label="Is Orthographic Size Function Active?" value="false" binding-path="cameraSettings.isOrthographicSizeFunctionActive" name="isOrthographicSizeFunctionActive" />
         <ui:Label text="OrthoSize = i - 1 + b^(deltaD * s)" display-tooltip-when-elided="true" />
-        <ui:Slider picking-mode="Ignore" label="Initial Orthographic Size:" value="5" high-value="50" tooltip="i" low-value="1" binding-path="initialCameraOrthographicSize" show-input-field="true" name="initialCameraOrthographicSize" />
-        <ui:Slider picking-mode="Ignore" label="Scale Distance from Ground:" value="1" high-value="1" show-input-field="true" binding-path="scaleDistance" tooltip="s" name="scaleDistance" />
-        <ui:Slider picking-mode="Ignore" label="Base for Orthographic Size Function:" value="1.25" high-value="1.5" show-input-field="true" low-value="1" binding-path="baseForCamSizeFunction" tooltip="b" name="baseForCamSizeFunction" />
+        <ui:Slider picking-mode="Ignore" label="Initial Orthographic Size:" value="5" high-value="50" tooltip="i" low-value="1" binding-path="cameraSettings.initialCameraOrthographicSize" show-input-field="true" name="initialCameraOrthographicSize" />
+        <ui:Slider picking-mode="Ignore" label="Scale Distance from Ground:" value="1" high-value="1" show-input-field="true" binding-path="cameraSettings.scaleDistance" tooltip="s" name="scaleDistance" />
+        <ui:Slider picking-mode="Ignore" label="Base for Orthographic Size Function:" value="1.25" high-value="1.5" show-input-field="true" low-value="1" binding-path="cameraSettings.baseForCamSizeFunction" tooltip="b" name="baseForCamSizeFunction" />
         <ui:IMGUIContainer name="camChart" />
     </ui:Foldout>
     <ui:Foldout text="Movement Settings" name="movementSettings" value="false">
@@ -43,7 +45,7 @@
         <uie:ObjectField label="sfx_Hurt" type="UnityEngine.AudioClip, UnityEngine.AudioModule" binding-path="sfx_Hurt" name="sfx_Hurt" allow-scene-objects="false" />
         <uie:ObjectField label="sfx_Running" type="UnityEngine.AudioClip, UnityEngine.AudioModule" binding-path="sfx_Running" name="sfx_Running" allow-scene-objects="false" />
         <uie:ObjectField label="sfx_Shotgun" type="UnityEngine.AudioClip, UnityEngine.AudioModule" binding-path="sfx_Shotgun" name="sfx_Shotgun" allow-scene-objects="false" />
-        <uie:ObjectField label="sfx_group_Jump" type="Assets.Scripts.SFX_Group, Assembly-CSharp" binding-path="sfx_group_Jump" name="sfx_group_Jump" />
+        <uie:ObjectField label="sfx_group_Jump" type="Assets.ScriptableObjects.SFX_Group, Assembly-CSharp" binding-path="sfx_group_Jump" name="sfx_group_Jump" allow-scene-objects="false" />
     </ui:Foldout>
     <ui:Foldout text="Weapons" name="weapons" value="false">
         <uie:ObjectField label="Pellet" type="UnityEngine.GameObject, UnityEngine.CoreModule" binding-path="pellet" name="pellet" allow-scene-objects="false" />

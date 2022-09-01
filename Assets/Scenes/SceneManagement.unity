@@ -568,6 +568,14 @@ MonoBehaviour:
   Canvas: {fileID: 0}
   EnemyManager: {fileID: 0}
   Player: {fileID: 0}
+  levelToLoad: 1
+  scenes:
+  - m_Handle: -32926
+  - m_Handle: -32926
+  sceneWrappers:
+  - scenePath: Assets/Scenes/SceneManagement.unity
+  - scenePath: Assets/Scenes/Level1.unity
+  - scenePath: Assets/Scenes/TestScene.unity
 --- !u!222 &4805275031826249486
 CanvasRenderer:
   m_ObjectHideFlags: 0

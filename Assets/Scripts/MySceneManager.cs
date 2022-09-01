@@ -1,3 +1,4 @@
+using Assets.Scripts.Utility;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -169,5 +170,24 @@ namespace Assets.Scripts
 		{
 			SceneManager.MoveGameObjectToScene(gameObject, SceneManager.GetSceneByName((sceneName == null) ? CurrentLevel : sceneName));
 		}
+
+		#region Editor Stuff
+		[HideInInspector]
+		public int levelToLoad = 1;
+		//[SerializeField]
+		public Scene[] scenes = new Scene[1];
+		public SceneWrapper[] sceneWrappers = new SceneWrapper[1];
+		//public List<Scene> Scenes { get => scenes; }
+		public List<string> SceneNames
+		{
+			get
+			{
+				var strings = new List<string>();
+				foreach (var s in sceneWrappers)
+					strings.Add(s.sceneName);
+				return strings;
+			}
+		}
+		#endregion
 	}
 }

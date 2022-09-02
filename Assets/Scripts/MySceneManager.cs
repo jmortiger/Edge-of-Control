@@ -183,12 +183,12 @@ namespace Assets.Scripts
 		#region Loading Callbacks and Coroutines
 		void AssignGameAdditiveObjectReferences(AsyncOperation _)
 		{
-			Main_Camera = GameObject.Find(GameSceneObject.Main_Camera.GetName());
-			VCam = GameObject.Find(GameSceneObject.VCam.GetName());
-			Goalpost = GameObject.Find(GameSceneObject.Goalpost.GetName());
-			Canvas = GameObject.Find(GameSceneObject.Canvas.GetName());
-			EnemyManager = GameObject.Find(GameSceneObject.EnemyManager.GetName());
-			Player = GameObject.Find(GameSceneObject.Player.GetName());
+			Main_Camera		= GameObject.Find(GameSceneObject.Main_Camera	.GetName());
+			VCam			= GameObject.Find(GameSceneObject.VCam			.GetName());
+			Goalpost		= GameObject.Find(GameSceneObject.Goalpost		.GetName());
+			Canvas			= GameObject.Find(GameSceneObject.Canvas		.GetName());
+			EnemyManager	= GameObject.Find(GameSceneObject.EnemyManager	.GetName());
+			Player			= GameObject.Find(GameSceneObject.Player		.GetName());
 		}
 
 		public IEnumerator GetSceneLoadProgress()
@@ -242,18 +242,12 @@ namespace Assets.Scripts
 			p.combo = 0;
 			p.score = 0;
 
-			/*GameObject.Find(GameSceneObject.*/
-			Main_Camera /*.GetName())*/.SetActive(false);
-			/*GameObject.Find(GameSceneObject.*/
-			VCam        /*.GetName())*/.SetActive(false);
-			/*GameObject.Find(GameSceneObject.*/
-			Goalpost    /*.GetName())*/.SetActive(false);
-			/*GameObject.Find(GameSceneObject.*/
-			Canvas      /*.GetName())*/.SetActive(false);
-			/*GameObject.Find(GameSceneObject.*/
-			EnemyManager/*.GetName())*/.SetActive(false);
-			/*GameObject.Find(GameSceneObject.*/
-			Player      /*.GetName())*/.SetActive(false);
+			/*GameObject.Find(GameSceneObject.*/Main_Camera /*.GetName())*/.SetActive(false);
+			/*GameObject.Find(GameSceneObject.*/VCam        /*.GetName())*/.SetActive(false);
+			/*GameObject.Find(GameSceneObject.*/Goalpost    /*.GetName())*/.SetActive(false);
+			/*GameObject.Find(GameSceneObject.*/Canvas      /*.GetName())*/.SetActive(false);
+			/*GameObject.Find(GameSceneObject.*/EnemyManager/*.GetName())*/.SetActive(false);
+			/*GameObject.Find(GameSceneObject.*/Player      /*.GetName())*/.SetActive(false);
 		}
 
 		private void MySceneManager_GoalReached(object sender, System.EventArgs e) => LoadNextLevel();

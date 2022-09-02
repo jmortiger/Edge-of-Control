@@ -560,6 +560,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 336399a50f1810f4294c15c384e6961e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  firstCollectionToLoad: 0
   loadingScreen: {fileID: 4805275032757264426}
   progressBar: {fileID: 686993212}
   Main_Camera: {fileID: 0}
@@ -569,13 +570,23 @@ MonoBehaviour:
   EnemyManager: {fileID: 0}
   Player: {fileID: 0}
   levelToLoad: 1
-  scenes:
-  - m_Handle: -32926
-  - m_Handle: -32926
   sceneWrappers:
   - scenePath: Assets/Scenes/SceneManagement.unity
+    sceneName: SceneManagement
+    forceReload: 0
+    newScenePath: Assets/Scenes/SceneManagement.unity
   - scenePath: Assets/Scenes/Level1.unity
-  - scenePath: Assets/Scenes/TestScene.unity
+    sceneName: Level1
+    forceReload: 0
+    newScenePath: Assets/Scenes/Level1.unity
+  - scenePath: Assets/Scenes/Level2.unity
+    sceneName: Level2
+    forceReload: 0
+    newScenePath: Assets/Scenes/Level2.unity
+  sceneCollections:
+  - {fileID: 11400000, guid: 2a7f2f7c4a403884ca4f7d40bc176f02, type: 2}
+  - {fileID: 11400000, guid: 6d7017c5a0262174fa9a8a499c9d5c98, type: 2}
+  - {fileID: 11400000, guid: 3293ae4babca6fc42bcb8b232d6d5903, type: 2}
 --- !u!222 &4805275031826249486
 CanvasRenderer:
   m_ObjectHideFlags: 0

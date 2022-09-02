@@ -8,9 +8,8 @@ namespace Assets.Scripts.Utility
 	{
 		public string scenePath;
 		public string sceneName;
+		public bool forceReload;
 		#region For Editor Property Drawer Use Only
-		[SerializeField]
-		bool sceneInBuildIndex = true;
 		[SerializeField]
 		string newScenePath = "";
 		#endregion

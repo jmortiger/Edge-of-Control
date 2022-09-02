@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 15676008b21c68e46a21ac15de675d0a, type: 3}
+  m_Name: sce_Level2
+  m_EditorClassIdentifier: 
+  collectionName: Level2
+  scenes:
+  - scenePath: Assets/Scenes/SceneManagement.unity
+    sceneName: 
+    forceReload: 0
+    newScenePath: Assets/Scenes/SceneManagement.unity
+  - scenePath: Assets/Scenes/GameSceneAdditive.unity
+    sceneName: GameSceneAdditive
+    forceReload: 0
+    newScenePath: Assets/Scenes/GameSceneAdditive.unity
+  - scenePath: Assets/Scenes/Level2.unity
+    sceneName: Level2
+    forceReload: 0
+    newScenePath: Assets/Scenes/Level2.unity

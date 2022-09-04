@@ -216,6 +216,13 @@ namespace Assets.Scripts
 
 		private void OnAllGameScenesLoaded(AsyncOperation[] operations)
 		{
+			InitGameSceneAdditiveReferences();
+			FindObjectOfType<Goalpost>().GoalReached += MySceneManager_GoalReached;
+			AllSceneLoadsComplete -= OnAllGameScenesLoaded;
+		}
+
+		void InitGameSceneAdditiveReferences()
+		{
 			/*GameObject.Find(GameSceneObject.*/
 			Main_Camera     /*.GetName())*/.SetActive(true);
 			/*GameObject.Find(GameSceneObject.*/
@@ -228,10 +235,6 @@ namespace Assets.Scripts
 			EnemyManager    /*.GetName())*/.SetActive(true);
 			/*GameObject.Find(GameSceneObject.*/
 			Player          /*.GetName())*/.SetActive(true);
-
-			FindObjectOfType<Goalpost>().GoalReached += MySceneManager_GoalReached;
-
-			AllSceneLoadsComplete -= OnAllGameScenesLoaded;
 		}
 
 		private void OnUnloadLevelScene()
@@ -242,12 +245,14 @@ namespace Assets.Scripts
 			p.combo = 0;
 			p.score = 0;
 
-			/*GameObject.Find(GameSceneObject.*/Main_Camera /*.GetName())*/.SetActive(false);
-			/*GameObject.Find(GameSceneObject.*/VCam        /*.GetName())*/.SetActive(false);
-			/*GameObject.Find(GameSceneObject.*/Goalpost    /*.GetName())*/.SetActive(false);
-			/*GameObject.Find(GameSceneObject.*/Canvas      /*.GetName())*/.SetActive(false);
-			/*GameObject.Find(GameSceneObject.*/EnemyManager/*.GetName())*/.SetActive(false);
-			/*GameObject.Find(GameSceneObject.*/Player      /*.GetName())*/.SetActive(false);
+			if (Main_Camera == null || VCam == null)
+				InitGameSceneAdditiveReferences();
+			Main_Camera .SetActive(false);
+			VCam        .SetActive(false);
+			Goalpost    .SetActive(false);
+			Canvas      .SetActive(false);
+			EnemyManager.SetActive(false);
+			Player      .SetActive(false);
 		}
 
 		private void MySceneManager_GoalReached(object sender, System.EventArgs e) => LoadNextLevel();

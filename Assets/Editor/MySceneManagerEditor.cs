@@ -1,11 +1,10 @@
 ﻿using Assets.Scripts;
 using Assets.ScriptableObjects;
-using System;
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using System.Collections.Generic;
 
 namespace Assets.EditorScripts
 {
@@ -20,7 +19,7 @@ namespace Assets.EditorScripts
 			/*var */manager = (MySceneManager)target;
 			#region Select Scene Collection To Launch In Play Mode
 			var sceneCollections = manager.sceneCollections;
-			var collectionNames = sceneCollections.ConvertAll(new Converter<SceneCollection, string>((sc) => sc.collectionName)).ToArray();
+			var collectionNames = sceneCollections.ConvertAll(new System.Converter<SceneCollection, string>((sc) => sc.collectionName)).ToArray();
 			EditorGUILayout.LabelField("Select Scene Collection To Launch In Play Mode");
 			currSceneCollectionSelection = EditorGUILayout.Popup(currSceneCollectionSelection, collectionNames);
 			#endregion
@@ -38,7 +37,14 @@ namespace Assets.EditorScripts
 		[MenuItem("CONTEXT/MySceneManager/Find Scene Collections")]
 		static void FindSceneCollections()
 		{
-			var sceneCollections = AssetDatabase.FindAssets("t:SceneCollection", new string[] { "Assets/Resources", "Assets/ScriptableObjects" });
+			var sceneCollections = AssetDatabase.FindAssets("t:SceneCollection", new string[]
+			{
+				"Assets/Resources",
+				"Assets/Scenes",
+				"Assets/Scenes/Collections",
+				"Assets/ScriptableObjects",
+				"Assets/ScriptableObjects/SceneCollections",
+			});
 			//var manager = (MySceneManager)target;
 			var added = new List<string>();
 			for (int i = 0; i < sceneCollections.Length; i++)
@@ -52,9 +58,8 @@ namespace Assets.EditorScripts
 				}
 			}
 			var dialog = "";
-			for (int i = 0; i < added.Count; i++)
-				dialog += $"Added {added[i]}";
-			EditorUtility.DisplayDialog("Added Scenes:", (dialog == "") ? "No SceneCollections were added." : dialog, "OK");
+			added.ForEach((elem) => dialog += $"Added {elem}");
+			EditorUtility.DisplayDialog("Added Scene Collections", (dialog == "") ? "No SceneCollections were added." : dialog, "OK");
 		}
 	}
 }

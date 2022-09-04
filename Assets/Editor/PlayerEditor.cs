@@ -66,8 +66,10 @@ namespace Assets.EditorScripts
 			//	newElem.bindingPath = currProp.name;
 			//	newElem.
 			//}
-				
+
 			//root.
+			//var camIMGUI = root.Q<IMGUIContainer>("cameraSettingsIMGUI");
+			//camIMGUI.onGUIHandler = CreateEditor(Player.cameraSettings).OnInspectorGUI;
 			return root;
 		}
 	}

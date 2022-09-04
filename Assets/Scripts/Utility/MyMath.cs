@@ -430,6 +430,26 @@ namespace Assets.Scripts.Utility
 		}
 		#endregion
 
+		#region Wrap Value
+		public static float Wrap(float value, float minInclusive = 0, float maxExclusive = 1)
+		{
+			if (value < minInclusive)
+				value += maxExclusive - minInclusive;
+			else if (value >= maxExclusive)
+				value -= maxExclusive - minInclusive;
+			return value;
+		}
+
+		public static float Wrap(float value, int minInclusive, int maxInclusive)
+		{
+			if (value < minInclusive)
+				value += maxInclusive - minInclusive;
+			else if (value > maxInclusive)
+				value -= maxInclusive - minInclusive;
+			return value;
+		}
+		#endregion
+
 		public static Vector2[] ComputeCircle(
 			float radius, 
 			int totalPoints = 32, 

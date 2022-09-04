@@ -136,16 +136,12 @@ namespace Assets.Scripts
 				player = FindObjectOfType<Player>();
 
 			enemyDimensions = enemyPrefab.GetComponent<Enemy>()./*CollidersBounded*/presetBounds; // TODO: Figure this problem out
-			groundLayer.SetLayerMask(LayerMask.GetMask(new string[] { "Ground" }));
-			allButNonCollidingAndEnemyLayer.SetLayerMask(LayerMask.GetMask(new string[] { "Ground", "Default", "Player" }));
 
 			FindObjectOfType<Goalpost>().GoalReached += EnemyManager_GoalReached;
 		}
 
 		void EnemyManager_GoalReached(object sender, System.EventArgs e) => ResetPool();
 
-		ContactFilter2D groundLayer = new();
-		ContactFilter2D allButNonCollidingAndEnemyLayer = new();
 		RaycastHit2D[] groundHits = new RaycastHit2D[2];
 		void Update()
 		{
@@ -174,16 +170,16 @@ namespace Assets.Scripts
 			{
 				var spawnAttemptPosition = GenerateSAP(createMinX, createMaxX, player/*enemyPrefab*/.transform.position.y, enemyPrefab.transform.position.z);
 				// TODO: Throughly test then trim upcoming section
-				if (Physics2D.Raycast(spawnAttemptPosition, Vector2.down, groundLayer, groundHits, 200f) >= 1)
+				if (Physics2D.Raycast(spawnAttemptPosition, Vector2.down, GlobalConstants.GroundLayer, groundHits, 200f) >= 1)
 				{
 					// Try to put it just over the ground.
 					spawnAttemptPosition.y = groundHits[0].point.y + enemyPrefab.GetComponent<Enemy>()./*CollidersBounded*/presetBounds.extents.y + 1;
 					enemyDimensions.center = spawnAttemptPosition;
 
-					var overlaps = Physics2D.OverlapBoxAll(spawnAttemptPosition, enemyPrefab.GetComponent<Enemy>().presetBounds.size, 0, groundLayer.layerMask);
+					var overlaps = Physics2D.OverlapBoxAll(spawnAttemptPosition, enemyPrefab.GetComponent<Enemy>().presetBounds.size, 0, GlobalConstants.GroundLayer.layerMask);
 					if (overlaps.Length > 0 || groundHits[0].collider.ClosestPoint(spawnAttemptPosition) == (Vector2)spawnAttemptPosition)
 					{
-						if (Physics2D.Raycast(spawnAttemptPosition, Vector2.up, groundLayer, groundHits) >= 1)
+						if (Physics2D.Raycast(spawnAttemptPosition, Vector2.up, GlobalConstants.GroundLayer, groundHits) >= 1)
 						{
 							spawnAttemptPosition.y = groundHits[0].point.y + enemyPrefab.GetComponent<Enemy>()./*CollidersBounded*/presetBounds.extents.y + 1;
 							enemyDimensions.center = spawnAttemptPosition;

@@ -1,13 +1,12 @@
+using Assets.ScriptableObjects;
+using Assets.Scripts.Utility;
 using Cinemachine;
 using System;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using Random = UnityEngine.Random;
 
-using Assets.ScriptableObjects;
-using Assets.Scripts.Utility;
-using System.Collections.Generic;
 // TODO: Trim inspector stuff, handled in UIDocument.
 // TODO: Modify UIDocument to reflect new fields.
 namespace Assets.Scripts
@@ -45,17 +44,11 @@ namespace Assets.Scripts
 			particleSystem = GetComponent<ParticleSystem>();
 		}
 		#endregion
-		#region UI
-		[Header("UI")]
-		public TMP_Text speedText;
-		public TMP_Text messages;
-		public TMP_Text scoreText;
-		public DamageIndicator damageIndicator;
-		#endregion
-
+		#region Camera Stuff
 		public CinemachineVirtualCamera myCam;
 		public Camera cam;
 		public CameraSettings cameraSettings;
+		#endregion
 
 		[ContextMenu("Assign Scene References")]
 		void AssignSceneReferences()
@@ -67,6 +60,7 @@ namespace Assets.Scripts
 			myCam = FindObjectOfType<CinemachineVirtualCamera>();
 			cam = FindObjectOfType<Camera>();
 		}
+		#region Velocity
 		public Vector2 Velocity { get => rb.velocity; }
 		Vector2 cachedVelocity;
 		public Vector2 CachedVelocity { get => cachedVelocity; }
@@ -75,11 +69,11 @@ namespace Assets.Scripts
 		/// Updated at the end of FixedUpdate (same as <see cref="CachedVelocity"/>), but also updated in <see cref="OnCollisionEnter2D(Collision2D)"/>.
 		/// </summary>
 		public Vector2 PreCollisionVelocity { get => preCollisionVelocity; }
+		#endregion
 		#region SFX
 		public AudioClip sfx_Running;
 		public AudioClip sfx_Jump;
 		public AudioClip sfx_Hurt;
-		public AudioClip sfx_Shotgun;
 		// TODO: Refactor SFXs to use SFX Groups
 		public SFX_Group sfx_group_Jump;
 		public SFX_Group sfx_group_Hurt;
@@ -96,55 +90,20 @@ namespace Assets.Scripts
 		private Vector2 colliderInitialDimensions;
 		void Start()
 		{
-			enemyAndGround.SetLayerMask(LayerMask.GetMask(new string[] { "Ground", "Enemy" }));
-			enemyLayer.SetLayerMask(LayerMask.GetMask(new string[] { "Enemy" }));
-			groundLayer.SetLayerMask(LayerMask.GetMask(new string[] { "Ground" }));
-
 			aSource.clip = sfx_Running;
 			aSource.loop = true;
-
-			StartShotgun();
 
 			colliderInitialDimensions = collider.bounds.size;
 		}
 		#endregion
 
-		#region Movement Settings
-		//[Tooltip("The force applied when using the movement actions.")]
-		//[Tooltip("\"Endless Runner Mode\". Apply a constant displacement and use a different move force.")]
-		//[Tooltip("The constant displacement applied under endless runner mode.")]
-		//[Tooltip("The force applied when using the movement actions if endless runner mode is on.")]
-		/// <summary>
-		/// The force applied when using the movement actions.
-		/// </summary>
-		public Vector2 moveForce = new(1f, 1f);
-		/// <summary>
-		/// "Endless Runner Mode". Apply a constant displacement and use a different move force.
-		/// </summary>
-		public bool isConstantMovementEnabled = false;
-		/// <summary>
-		/// The constant displacement applied under endless runner mode.
-		/// </summary>
-		public Vector2 constantMovementDisplacement = new(5f, 0f);
-		/// <summary>
-		/// The force applied when using the movement actions if endless runner mode is on.
-		/// </summary>
-		public Vector2 constantMoveForce = new(5f, 1f);
-
-		public float rollSpeed = 3f;
-		public float rollTimerLength = 1f;
-		public float stumbleTimerLength = 1f;
-		public float invincibleTimerLength = 1f;
-		#endregion
+		public MovementSettings movementSettings;
 		#region Jump Checks and Update
 		bool jumpPressedLastFrame = false;
-		//bool? jumpPressedThisFrame = null;
 		bool jumpPressedThisFrame = false;
-		//bool JumpPressedOnThisFrame { get => (jumpPressedThisFrame ?? false) && !jumpPressedLastFrame; }
 		bool JumpPressedOnThisFrame { get => (jumpPressedThisFrame && (!jumpPressedLastFrame)); }
 		void Update()
 		{
-			//jumpPressedThisFrame = (jumpPressedThisFrame ?? false) || input.IsPressed("Jump");
 			jumpPressedThisFrame = jumpPressedThisFrame || input.IsPressed("Jump");
 			//Debug.Log($"{jumpPressedLastFrame}");
 		}
@@ -167,36 +126,32 @@ namespace Assets.Scripts
 		[Flags]
 		public enum CollisionState
 		{
-			None = 0x0000_0000,
-			BGWall = 0x0000_0001,
-			Ground = 0x0000_0010,
-			EnemyCollider = 0x0000_0100,
-			EnemyTrigger = 0x0000_1000,
+			None			= 0x0000_0000,
+			BGWall			= 0x0000_0001,
+			Ground			= 0x0000_0010,
+			EnemyCollider	= 0x0000_0100,
+			EnemyTrigger	= 0x0000_1000,
 		}
 		[SerializeField]
 		CollisionState collisionState = CollisionState.None;
+		#region Roll State
 		bool rollRight = true;
 		float rollTimer = 0;
+		float rollInitialVx = 0;
+		#endregion
+		#region Wallrun State
+		float hangTime = 1f;
+		float wallrunStartDir = 0;
+		#endregion
 		float stumbleTimer = 0;
 		float invincibleTimer = 0;
 		#endregion
-		#region Collision Checking Members
-		ContactFilter2D enemyAndGround = new();
-		ContactFilter2D enemyLayer = new();
-		ContactFilter2D groundLayer = new();
-		Collider2D[] enemyCollidersOverlapped = new Collider2D[3];
-		#endregion
+		readonly Collider2D[] enemyCollidersOverlapped = new Collider2D[3];
 		[SerializeField] uint jumpPresses = 0;
 		public int combo = 0;
 
-		#region RollAnim Fields - controls the collider during the roll based of anim frame timings and dimensions
-		public float rollAnim_EntranceLengthRatio = 1f / 3f;
-		public float rollAnim_ProperLengthRatio = 1f / 3f;
-		public float rollAnim_ExitLengthRatio = 1f / 3f;
-		public float rollAnim_MinHeightRatio = .5f;
-		#endregion
+		public RollAnimationInfo rollInfo;
 
-		// TODO: Expand timer and goalpost
 		// TODO: Make aerial movement different from grounded movement.
 		// TODO: Troubleshoot landing on enemies problem.
 		// TODO: Add combo timer
@@ -218,25 +173,25 @@ namespace Assets.Scripts
 				moveVector.x = (moveVector.x == 0) ? 0 : ((moveVector.x > 0) ? 1 : -1);
 				moveVector.y = (moveVector.y == 0) ? 0 : ((moveVector.y > 0) ? 1 : -1);
 
-				if (isConstantMovementEnabled)
+				if (movementSettings.isConstantMovementEnabled)
 				{
-					rb.AddForce(Vector2.Scale(moveVector, constantMoveForce));
-					transform.position += (Vector3)constantMovementDisplacement * Time.fixedDeltaTime;
+					rb.AddForce(Vector2.Scale(moveVector, movementSettings.constantMoveForce));
+					transform.position += (Vector3)movementSettings.constantMovementDisplacement * Time.fixedDeltaTime;
 				}
 				else
-					rb.AddForce(Vector2.Scale(moveVector, moveForce));
+					rb.AddForce(Vector2.Scale(moveVector, movementSettings.moveForce));
 				return moveVector;
 			}
 			void EnterStumble()
 			{
 				movementState |= MovementState.Stumbling;
-				stumbleTimer = stumbleTimerLength;
+				stumbleTimer = movementSettings.stumbleTimerLength;
 				var knockback = new Vector2(-1 * /*Velocity*/CachedVelocity.x * .5f, 2);
 				rb.velocity = Vector2.zero;
 				//rb.velocity = knockback;
 				rb.AddForce(knockback, ForceMode2D.Impulse);
 				Physics2D.IgnoreLayerCollision(LayerMask.NameToLayer("Default"), LayerMask.NameToLayer("Enemy"), true);
-				damageIndicator.Show(stumbleTimerLength);
+				damageIndicator.Show(movementSettings.stumbleTimerLength);
 				impulseSource?.GenerateImpulseAt(transform.position, /*Velocity*/CachedVelocity);
 				AddUIMessage("Stumbled...");
 				combo = 0;
@@ -256,7 +211,7 @@ namespace Assets.Scripts
 
 				var startLifetime = m.startLifetime;
 				var origStartLifetimeConstant = startLifetime.constant;
-				startLifetime.constant = stumbleTimerLength;
+				startLifetime.constant = movementSettings.stumbleTimerLength;
 				m.startLifetime = startLifetime;
 
 				particleSystem.Emit(20);
@@ -279,8 +234,9 @@ namespace Assets.Scripts
 			{
 				movementState |= MovementState.Rolling;
 				particleSystem.Play(true);
-				rollTimer = rollTimerLength;
+				rollTimer = movementSettings.rollTimerLength;
 				rollRight = Velocity.x > 0;
+				rollInitialVx = Mathf.Abs(CachedVelocity.x);
 				AddUIMessage("Successful PK Roll");
 			}
 			#endregion
@@ -335,13 +291,13 @@ namespace Assets.Scripts
 						//var moveVector = input.FindAction("Move").ReadValue<Vector2>();
 						//moveVector.x = (moveVector.x == 0) ? 0 : ((moveVector.x > 0) ? 1 : -1);
 						moveVector.y = 1;
-						// TODO: If fall speed too high, force to roll
+						// TODO: If fall speed too high, force to roll?
 						if (collisionState.HasFlag(CollisionState.EnemyTrigger) && Velocity.y <= 0)
 						{
 							var vel = Velocity;
 							vel.y *= -1;
 							rb.velocity = vel;
-							rb.velocity *= conservedVelocity;
+							rb.velocity *= movementSettings.conservedVelocity;
 
 							// This process seems to automatically clear currentEnemyCollisions due
 							// to the deactivation of enemy colliders further down the chain. If
@@ -356,7 +312,7 @@ namespace Assets.Scripts
 							AddUIMessage("Enemy Bounce");
 							combo++;
 						}
-						var fApplied = Vector2.Scale(moveVector, jumpForce);
+						var fApplied = Vector2.Scale(moveVector, movementSettings.jumpForce);
 						rb.AddForce(fApplied, ForceMode2D.Impulse);
 						aSource.Stop();
 						particleSystem.Emit(30);
@@ -387,9 +343,9 @@ namespace Assets.Scripts
 					else if (collisionState.HasFlag(CollisionState.BGWall) && JumpPressedOnThisFrame && Velocity.x != 0)
 					{
 						var vel = Velocity;
-						hangTime = Mathf.Abs(vel.x * Mathf.Sin(wallRunAngle));
+						hangTime = Mathf.Abs(vel.x * Mathf.Sin(movementSettings.wallRunAngle));
 						wallrunStartDir = (vel.x > 0) ? 1 : -1;
-						vel.x *= Mathf.Cos(wallRunAngle);
+						vel.x *= Mathf.Cos(movementSettings.wallRunAngle);
 						rb.velocity = vel;
 						rb.AddForce(new(0, hangTime));
 						movementState |= MovementState.Wallrunning;
@@ -434,7 +390,7 @@ namespace Assets.Scripts
 						EnterGrounded();
 						goto case MovementState.Grounded;
 					}
-					else if (((collisionState.HasFlag(CollisionState.Ground) && /*Velocity.y*/CachedVelocity.y < maxSafeFallSpeed) || collisionState.HasFlag(CollisionState.EnemyCollider)) && !movementState.HasFlag(MovementState.Invincible))
+					else if (((collisionState.HasFlag(CollisionState.Ground) && /*Velocity.y*/CachedVelocity.y < movementSettings.maxSafeFallSpeed) || collisionState.HasFlag(CollisionState.EnemyCollider)) && !movementState.HasFlag(MovementState.Invincible))
 					{
 						if (input.IsPressed("DownAction"))
 						{
@@ -468,7 +424,7 @@ namespace Assets.Scripts
 						AddUIMessage("Back up!");
 						//Physics2D.IgnoreLayerCollision(LayerMask.NameToLayer("Default"), LayerMask.NameToLayer("Enemy"), false);
 						//movementState |= MovementState.Grounded;
-						invincibleTimer = invincibleTimerLength;
+						invincibleTimer = movementSettings.invincibleTimerLength;
 						movementState |= MovementState.Invincible;
 						//movementState |= MovementState.Grounded;
 						EnterGrounded();
@@ -481,7 +437,7 @@ namespace Assets.Scripts
 				{
 					moveVector = moveVector.IsFinite() ? moveVector : BasicMovement();
 					invincibleTimer -= Time.fixedDeltaTime;
-					if (invincibleTimer <= 0f || (rb.OverlapCollider(enemyLayer, enemyCollidersOverlapped) <= 0 && collisionState.HasFlag(CollisionState.Ground)))
+					if (invincibleTimer <= 0f || (rb.OverlapCollider(GlobalConstants.EnemyLayer/*enemyLayer*/, enemyCollidersOverlapped) <= 0 && collisionState.HasFlag(CollisionState.Ground)))
 					{
 						//AddUIMessage("Back up!");
 						var c = spriteRenderer.color;
@@ -497,7 +453,7 @@ namespace Assets.Scripts
 				case MovementState.Rolling:
 				{
 					//moveVector = moveVector.IsFinite() ? moveVector : BasicMovement();
-					transform.position += new Vector3(rollSpeed * Time.fixedDeltaTime * (rollRight ? 1 : -1), 0f, 0f);
+					//transform.position += new Vector3(movementSettings.rollSpeed * Time.fixedDeltaTime * (rollRight ? 1 : -1), 0f, 0f);
 					rollTimer -= Time.fixedDeltaTime;
 					if (collisionState.HasFlag(CollisionState.EnemyCollider))
 					{
@@ -514,6 +470,8 @@ namespace Assets.Scripts
 					}
 					else if (rollTimer <= 0f/* || (rb.OverlapCollider(enemyLayer, enemyCollidersOverlapped) <= 0 && collisionState.HasFlag(CollisionState.Ground))*/)
 					{
+						rb.velocity = new(movementSettings.rollExitSpeed * (rollRight ? 1 : -1), Velocity.y);
+
 						MyCapsule.size = colliderInitialDimensions;
 						
 						// TODO: Remove when using animations
@@ -528,9 +486,19 @@ namespace Assets.Scripts
 					else
 					{
 						rollTimer = (rollTimer < 0) ? 0 : rollTimer;
-						var h = (rollTimer > rollTimerLength / 2) ? 
-							Mathf.SmoothStep(colliderInitialDimensions.y * rollAnim_MinHeightRatio, colliderInitialDimensions.y, (rollTimer / (rollTimerLength / 2)) - 1) : 
-							Mathf.SmoothStep(colliderInitialDimensions.y, colliderInitialDimensions.y * rollAnim_MinHeightRatio, rollTimer / (rollTimerLength / 2));
+
+						rb.velocity = new(Mathf.Lerp(movementSettings.rollExitSpeed, rollInitialVx, rollTimer / movementSettings.rollTimerLength) * (rollRight ? 1 : -1), Velocity.y);
+
+						float GetRollHeightAtTime(float rollTimer)
+						{
+							if (rollTimer <= rollInfo.entranceLengthRatio * movementSettings.rollTimerLength)
+								return Mathf.SmoothStep(colliderInitialDimensions.y, colliderInitialDimensions.y * rollInfo.minHeightRatio, rollTimer / (movementSettings.rollTimerLength / 2));
+							else if (rollTimer <= (rollInfo.entranceLengthRatio + rollInfo.properLengthRatio) * movementSettings.rollTimerLength)
+								return colliderInitialDimensions.y * rollInfo.minHeightRatio;
+							else
+								return Mathf.SmoothStep(colliderInitialDimensions.y * rollInfo.minHeightRatio, colliderInitialDimensions.y, (rollTimer / (movementSettings.rollTimerLength / 2)) - 1);
+						}
+						var h = GetRollHeightAtTime(rollTimer);
 						
 						MyCapsule.size = new(colliderInitialDimensions.x, h);
 
@@ -553,32 +521,34 @@ namespace Assets.Scripts
 			#region After movement is handled
 			// Change Cam Size
 			myCam.m_Lens.OrthographicSize = cameraSettings.isOrthographicSizeFunctionActive ? 
-				cameraSettings.GetNewOrthographicSize(Velocity, transform.position, groundLayer) :
+				cameraSettings.GetNewOrthographicSize(Velocity, transform.position, GlobalConstants.GroundLayer/*groundLayer*/) :
 				cameraSettings.defaultOrthographicSize;
 
 			// Update speed display after application of forces.
 			UpdateSpeedText();
 
 			// Reset jump inputs
-			//jumpPressedLastFrame = jumpPressedThisFrame ?? false;
-			//jumpPressedThisFrame = null;
 			jumpPressedLastFrame = jumpPressedThisFrame;
 			jumpPressedThisFrame = false;
-
-			UpdateShotgun();
 
 			cachedVelocity = preCollisionVelocity = Velocity;
 			#endregion
 		}
 
-		#region UI Elements
+		#region UI Stuff
+		#region Fields
+		public TMP_Text speedText;
+		public TMP_Text messages;
+		public TMP_Text scoreText;
+		public DamageIndicator damageIndicator;
+		#endregion
 		const float WARNING_RANGE = .25f;
 		//bool showY = true;
 		//short flipShowYCounter = 0;
 		void UpdateSpeedText()
 		{
 			speedText.text = $" X: {Velocity.x} u/s\r\n ";
-			if (Velocity.y < maxSafeFallSpeed)
+			if (Velocity.y < movementSettings.maxSafeFallSpeed)
 			{
 				//flipShowYCounter++;
 				//showY ^= (flipShowYCounter >= 8);
@@ -586,10 +556,10 @@ namespace Assets.Scripts
 				speedText.text += $"<color=\"red\">Y: {Velocity.y} u/s";
 			}
 			// Transitions from white to red as you approach the max safe fall speed
-			else if (Velocity.y < (maxSafeFallSpeed * (1f - WARNING_RANGE)))
+			else if (Velocity.y < (movementSettings.maxSafeFallSpeed * (1f - WARNING_RANGE)))
 			{
-				var velAdjusted = Velocity.y - maxSafeFallSpeed * (1f - WARNING_RANGE);
-				var maxAdjusted = maxSafeFallSpeed * WARNING_RANGE;
+				var velAdjusted = Velocity.y - movementSettings.maxSafeFallSpeed * (1f - WARNING_RANGE);
+				var maxAdjusted = movementSettings.maxSafeFallSpeed * WARNING_RANGE;
 				var percentage = velAdjusted / maxAdjusted;
 				var outOf256 = Mathf.FloorToInt(Mathf.Lerp(255f, 0f, percentage));
 				speedText.text += $"<color=#FF{outOf256:X2}{outOf256:X2}>Y: {Velocity.y} u/s";
@@ -646,148 +616,6 @@ namespace Assets.Scripts
 			Debug.Assert(scoreText.text.Length == 9);
 		}
 		#endregion
-		#endregion
-
-		#region Shotgun
-		public float fireRateLength = 1f;
-		float fireRate = 0f;
-		public GameObject pellet;
-		//public Vector2 projectileSpawnOffset = new(.5f, 0);
-		public float sprayRangeDegrees = 15f;
-		public int shotgunPelletNumber = 5;
-		GameObject[] pellets;
-		Vector3[] pelletsQueuedPositions;
-		Material[] pelletTrailMats;
-		// TODO: Extract Shotgun
-		public void OnFire(InputAction.CallbackContext cc)
-		{
-			if (fireRate <= 0)
-			{
-				aSource.PlayOneShot(sfx_Shotgun);
-				fireRate = fireRateLength;
-				//var t = projectileSpawnOffset;
-				//t.x *= (Velocity.x != 0) ? (Velocity.x > 0 ? 1 : -1) : 0;
-				//t.y *= (Velocity.y != 0) ? (Velocity.y > 0 ? 1 : -1) : 0;
-				var aimDirection = input.GetActionValueAsJoystick("Aim", transform.position);
-				if (aimDirection.magnitude == 0)
-					aimDirection = Vector2.right;
-				//projectile.GetComponent<TrailRenderer>().time = fireRateLength;
-				for (int i = 0; i < pellets.Length; i++)
-				{
-					pellets[i].transform.position = (Vector3)aimDirection + transform.position;
-					var tr = pellets[i].GetComponent<TrailRenderer>();
-					tr.time = fireRateLength;
-					tr.emitting = tr.enabled = true;
-					pellets[i].SetActive(true);
-					var angleOffset = (Random.value * sprayRangeDegrees) - (sprayRangeDegrees / 2f);
-					Debug.Log($"angleOffset[{i}]: {angleOffset}");
-					var pelletDir = (Quaternion.Euler(0, 0, angleOffset) * aimDirection).normalized;
-					var raycastHit = new RaycastHit2D[2];
-					var raycastHitNum = Physics2D.Raycast(pellets[i].transform.position, pelletDir, enemyAndGround, raycastHit);
-					if (raycastHitNum <= 0)
-						/*pellets[i].transform.position*/pelletsQueuedPositions[i] = pellets[i].transform.position + pelletDir * cam.OrthographicBoundsByScreen().size.x;
-					else
-					{
-						/*pellets[i].transform.position*/pelletsQueuedPositions[i] = raycastHit[0].point + (Vector2)pelletDir;
-						if (raycastHit[0].collider.gameObject.layer == LayerMask.NameToLayer("Enemy"))
-						{
-							UpdateScore(50);
-							raycastHit[0].collider.GetComponent<Enemy>().KillEnemy();
-						}
-					}
-				}
-			}
-		}
-		void StartShotgun()
-		{
-			pelletsQueuedPositions = new Vector3[shotgunPelletNumber];
-			for (int i = 0; i < pelletsQueuedPositions.Length; i++)
-				pelletsQueuedPositions[i] = Vector3.positiveInfinity;
-			pelletTrailMats = new Material[shotgunPelletNumber];
-			pellets = new GameObject[shotgunPelletNumber];
-			for (int i = 0; i < pellets.Length; i++)
-			{
-				pellets[i] = Instantiate(pellet, Vector3.zero, Quaternion.identity);
-				//UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(pellets[i], UnityEngine.SceneManagement.SceneManager.GetSceneByName("GameSceneAdditive"));
-				FindObjectOfType<MySceneManager>().MoveToScene(pellets[i], "GameSceneAdditive");
-				var tr = pellets[i].GetComponent<TrailRenderer>();
-				tr.time = fireRateLength;
-				tr.emitting = tr.enabled = false;
-				tr.material.color = Color.white;
-				pelletTrailMats[i] = tr.material;
-				pellets[i].SetActive(false);
-			}
-		}
-		void UpdateShotgun()
-		{
-			if (fireRate > 0)
-			{
-				for (int i = 0; i < pellets.Length; i++)
-				{
-					if (pelletsQueuedPositions[i].IsFinite())
-					{
-						pellets[i].transform.position = pelletsQueuedPositions[i];
-						pelletsQueuedPositions[i] = Vector3.positiveInfinity;
-					}
-					//var c = pelletTrailMats[i].color;
-					var c = pellets[i].GetComponent<TrailRenderer>().material.color;
-					c.a = Mathf.SmoothStep(0, 1, fireRate / fireRateLength);
-					//pelletTrailMats[i].color = c;
-					pellets[i].GetComponent<TrailRenderer>().material.color = c;
-					pellets[i].GetComponent<SpriteRenderer>().color = c;
-				}
-				fireRate -= Time.fixedDeltaTime;
-				if (fireRate <= 0)
-					ResetPellets();
-			}
-		}
-		void ResetPellets()
-		{
-			for (int i = 0; i < pellets.Length; i++)
-			{
-				var tr = pellets[i].GetComponent<TrailRenderer>();
-				tr.time = fireRateLength;
-				tr.emitting = tr.enabled = false;
-				tr.material.color = Color.white;
-				pellets[i].SetActive(false);
-			}
-		}
-		#endregion
-
-		// TODO: Have health and refactor damage
-		//public float health = 100f;
-		//public void OnTakeDamage(float damage = 10f)
-		//{
-		//	health 
-		//}
-
-		void OnRenderObject()
-		{
-			DrawPositionIndicator();
-			DrawAimingIndicators(true);
-		}
-
-		void DrawAimingIndicators(bool showSpreadRange)
-		{
-#if UNITY_EDITOR
-			MyGizmos.DrawLine3D(transform.position, transform.position + (Vector3)input.GetRightStickOrMouseValueAsJoystickEditor(transform.position) * 5f, Color.red);
-#else
-			MyGizmos.DrawLine3D(transform.position, transform.position + (Vector3)input.GetActionValueAsJoystick("Aim", transform.position));
-#endif
-
-			if (showSpreadRange)
-			{
-#if UNITY_EDITOR
-				var aimDirection = input.GetRightStickOrMouseValueAsJoystickEditor(transform.position);
-				MyGizmos.DrawLine3D(transform.position, transform.position + Quaternion.Euler(0, 0, sprayRangeDegrees / 2f) * aimDirection * 10f);
-				MyGizmos.DrawLine3D(transform.position, transform.position + Quaternion.Euler(0, 0, -sprayRangeDegrees / 2f) * aimDirection * 10f);
-#else
-				var aimDirection = input.GetActionValueAsJoystick("Aim", transform.position);
-				MyGizmos.DrawLine3D(transform.position, transform.position + Quaternion.Euler(0, 0, sprayRangeDegrees / 2f) * aimDirection * 10f);
-				MyGizmos.DrawLine3D(transform.position, transform.position + Quaternion.Euler(0, 0, -sprayRangeDegrees / 2f) * aimDirection * 10f);
-#endif
-			}
-		}
 
 		void DrawPositionIndicator()
 		{
@@ -803,26 +631,14 @@ namespace Assets.Scripts
 			bounds.center = pos;
 			MyGizmos.DrawFilledBox2D(bounds, color: new(1, 1, 1, .3f));
 		}
-
-		#region Collision Stuff
-		List<Enemy> currentEnemyCollisions = new List<Enemy>(3);
-		#endregion
-		#region Jump Stuff
-		public Vector2 jumpForce = new(.5f, 15f);
-		public float maxSafeFallSpeed = -20f;
-		[Tooltip("The amount of velocity conserved when jumping off enemies' heads.")]
-		[Range(0, 1)]
-		public float conservedVelocity = .8f;
-		[Tooltip("The angle of attack, in degrees, for wall runs. Determines loss of horizontal speed and hang time.")]
-		[Range(0, 90)]
-		public float wallRunAngle = 5f;
-		private float hangTime = 1f;
-		private float wallrunStartDir = 0;
 		#endregion
 
-		// TODO: Modify to use switches
+		void OnRenderObject() => DrawPositionIndicator();
+
+		readonly List<Enemy> currentEnemyCollisions = new(3);
 		#region OnCollision
 		// TODO: Resolve bad wall jumping (check collider.max against collided.min and vice versa)
+		// TODO: Modify to use switches
 		void OnCollisionEnter2D(Collision2D collision)
 		{
 			if (collision.gameObject.layer == LayerMask.NameToLayer("Enemy"))
@@ -865,8 +681,6 @@ namespace Assets.Scripts
 			}
 			else if (collision.gameObject.layer == LayerMask.NameToLayer("BGInteractable"))
 				collisionState |= CollisionState.BGWall;
-			//else if (collision.gameObject.layer == LayerMask.NameToLayer("Ground"))
-			//	collisionState |= CollisionState.Ground;
 			else if (collision.gameObject.layer == LayerMask.NameToLayer("Goal"))
 				Debug.Log($"Finished with time of {Time.timeSinceLevelLoad}");
 		}
@@ -876,8 +690,6 @@ namespace Assets.Scripts
 				collisionState |= CollisionState.EnemyTrigger;
 			else if (collision.gameObject.layer == LayerMask.NameToLayer("BGInteractable"))
 				collisionState |= CollisionState.BGWall;
-			//else if (collision.gameObject.layer == LayerMask.NameToLayer("Ground"))
-			//	collisionState |= CollisionState.Ground;
 		}
 		void OnTriggerExit2D(Collider2D collision)
 		{
@@ -892,11 +704,6 @@ namespace Assets.Scripts
 				collisionState |= CollisionState.BGWall;
 				collisionState ^= CollisionState.BGWall;
 			}
-			//else if (collision.gameObject.layer == LayerMask.NameToLayer("Ground"))
-			//{
-			//	collisionState |= CollisionState.Ground;
-			//	collisionState ^= CollisionState.Ground;
-			//}
 		}
 		#endregion
 	}

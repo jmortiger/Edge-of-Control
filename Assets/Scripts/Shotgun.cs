@@ -118,7 +118,7 @@ namespace Assets.Scripts
 						pelletsQueuedPositions[i] = raycastHit[0].point + (Vector2)pelletDir;
 						if (raycastHit[0].collider.gameObject.layer == LayerMask.NameToLayer("Enemy"))
 						{
-							player.UpdateScore(50);
+							player.OnFirearmHit(50, 5);//.UpdateScore(50);
 							raycastHit[0].collider.GetComponent<Enemy>().KillEnemy();
 						}
 					}

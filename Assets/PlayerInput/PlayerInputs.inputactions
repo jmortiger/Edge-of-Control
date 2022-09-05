@@ -60,7 +60,7 @@
                     "initialStateCheck": false
                 },
                 {
-                    "name": "SideAction",
+                    "name": "Boost",
                     "type": "Button",
                     "id": "508384da-b3db-4cb7-8e7f-a3cbdff389c5",
                     "expectedControlType": "Button",
@@ -438,7 +438,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "Keyboard&Mouse",
-                    "action": "SideAction",
+                    "action": "Boost",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
@@ -449,7 +449,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "Gamepad",
-                    "action": "SideAction",
+                    "action": "Boost",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },

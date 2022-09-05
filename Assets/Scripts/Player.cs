@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
 
 // TODO: Trim inspector stuff, handled in UIDocument.
 // TODO: Modify UIDocument to reflect new fields.
@@ -57,6 +58,7 @@ namespace Assets.Scripts
 			messages = GameObject.Find("Messages").GetComponent<TMP_Text>();
 			scoreText = GameObject.Find("Score").GetComponent<TMP_Text>();
 			damageIndicator = FindObjectOfType<DamageIndicator>();
+			boostMeterUI = FindObjectOfType<UnityEngine.UI.Slider>();
 			myCam = FindObjectOfType<CinemachineVirtualCamera>();
 			cam = FindObjectOfType<Camera>();
 		}
@@ -98,42 +100,52 @@ namespace Assets.Scripts
 		#endregion
 
 		public MovementSettings movementSettings;
-		#region Jump Checks and Update
+		#region Jump & Boost Checks and Update
+		#region Jump
 		bool jumpPressedLastFrame = false;
 		bool jumpPressedThisFrame = false;
 		bool JumpPressedOnThisFrame { get => (jumpPressedThisFrame && (!jumpPressedLastFrame)); }
+		#endregion
+		#region Boost
+		bool boostPressedLastFrame = false;
+		bool boostPressedThisFrame = false;
+		bool BoostPressedOnThisFrame { get => (boostPressedThisFrame && (!boostPressedLastFrame)); }
+		#endregion
 		void Update()
 		{
 			jumpPressedThisFrame = jumpPressedThisFrame || input.IsPressed("Jump");
+			boostPressedThisFrame = boostPressedThisFrame || input.IsPressed("Boost");
 			//Debug.Log($"{jumpPressedLastFrame}");
 		}
 		#endregion
 		#region State
+		#region Flags
 		[Flags]
 		public enum MovementState
 		{
-			None		= 0x0000_0000,
-			Grounded	= 0x0000_0001,
-			Jumping		= 0x0000_0010,
-			Wallrunning	= 0x0000_0100,
-			Falling		= 0x0000_1000,
-			Stumbling	= 0x0001_0000,
-			Invincible	= 0x0010_0000,
-			Rolling		= 0x0100_0000,
+			None = 0x0000_0000,
+			Grounded = 0x0000_0001,
+			Jumping = 0x0000_0010,
+			Wallrunning = 0x0000_0100,
+			Falling = 0x0000_1000,
+			Stumbling = 0x0001_0000,
+			Invincible = 0x0010_0000,
+			Rolling = 0x0100_0000,
 		}
 		[SerializeField]
 		MovementState movementState = MovementState.None;
 		[Flags]
 		public enum CollisionState
 		{
-			None			= 0x0000_0000,
-			BGWall			= 0x0000_0001,
-			Ground			= 0x0000_0010,
-			EnemyCollider	= 0x0000_0100,
-			EnemyTrigger	= 0x0000_1000,
+			None = 0x0000_0000,
+			BGWall = 0x0000_0001,
+			Ground = 0x0000_0010,
+			EnemyCollider = 0x0000_0100,
+			EnemyTrigger = 0x0000_1000,
 		}
 		[SerializeField]
 		CollisionState collisionState = CollisionState.None;
+		#endregion
 		#region Roll State
 		bool rollRight = true;
 		float rollTimer = 0;
@@ -145,10 +157,12 @@ namespace Assets.Scripts
 		#endregion
 		float stumbleTimer = 0;
 		float invincibleTimer = 0;
+		bool boostConsumable = false;
 		#endregion
 		readonly Collider2D[] enemyCollidersOverlapped = new Collider2D[3];
 		[SerializeField] uint jumpPresses = 0;
 		public int combo = 0;
+		public uint boostMeter = 0;
 
 		public RollAnimationInfo rollInfo;
 
@@ -158,14 +172,18 @@ namespace Assets.Scripts
 		// TODO: Tweak wall run
 		// TODO: Check for refactors from Velocity to Cached Velocity.
 		// TODO: Add coil jump
+		// TODO: Add boost run
+		// TODO: Add auditory feedback for fatal/damaging jumps (like Mirror's Edge).
 		void FixedUpdate()
 		{
-			if (JumpPressedOnThisFrame)
-			{
-				jumpPresses++;
-				Debug.Log($"JumpPressedOnThisFrame");
-			}
+			#region Debug Jump Checks
+			//if (JumpPressedOnThisFrame)
+			//{
+			//	jumpPresses++;
+			//	Debug.Log($"JumpPressedOnThisFrame");
+			//}
 			//Debug.Log($"Presses: {jumpPresses}");
+			#endregion
 			#region Methods
 			Vector2 BasicMovement()
 			{
@@ -195,6 +213,7 @@ namespace Assets.Scripts
 				impulseSource?.GenerateImpulseAt(transform.position, /*Velocity*/CachedVelocity);
 				AddUIMessage("Stumbled...");
 				combo = 0;
+				ResetBoostMeter();
 				UpdateScore(-100);
 				var c = spriteRenderer.color;
 				c.a = .5f;
@@ -228,6 +247,7 @@ namespace Assets.Scripts
 			void EnterGrounded()
 			{
 				movementState |= MovementState.Grounded;
+				boostConsumable = true;
 				particleSystem.Play(true);
 			}
 			void EnterRolling()
@@ -235,9 +255,48 @@ namespace Assets.Scripts
 				movementState |= MovementState.Rolling;
 				particleSystem.Play(true);
 				rollTimer = movementSettings.rollTimerLength;
-				rollRight = Velocity.x > 0;
+				rollRight = /*Velocity*/CachedVelocity.x >= 0;
 				rollInitialVx = Mathf.Abs(CachedVelocity.x);
 				AddUIMessage("Successful PK Roll");
+			}
+			void EnterWallrunning()
+			{
+				var vel = Velocity;
+				hangTime = Mathf.Abs(vel.x * Mathf.Sin(movementSettings.wallRunAngle));
+				wallrunStartDir = (vel.x > 0) ? 1 : -1;
+				vel.x *= Mathf.Cos(movementSettings.wallRunAngle);
+				rb.velocity = vel;
+				rb.AddForce(new(0, hangTime));
+				boostConsumable = true;
+				movementState |= MovementState.Wallrunning;
+			}
+			bool TryBoostJumping(Vector2 moveVector)
+			{
+				if (JumpPressedOnThisFrame && input.IsPressed("Boost") && boostConsumable && boostMeter >= movementSettings.boostJumpCost)
+				{
+					//var moveVector = input.FindAction("Move").ReadValue<Vector2>();
+					//moveVector.x = (moveVector.x == 0) ? 0 : ((moveVector.x > 0) ? 1 : -1);
+					moveVector.y = 1;
+					// If falling, zero out vertical velocity so the jump isn't fighting the downward momentum.
+					if (Velocity.y < 0)
+					{
+						var vel = Velocity;
+						vel.y = 0;
+						rb.velocity = vel;
+					}
+					var fApplied = Vector2.Scale(moveVector, movementSettings.jumpForce);
+					rb.AddForce(fApplied, ForceMode2D.Impulse);
+					aSource.Stop();
+					//particleSystem.Play();// Should I do this?
+					particleSystem.Emit(30);
+					particleSystem.Stop();
+					aSource.PlayOneShot(sfx_group_Jump.GetRandomClip());
+					UpdateBoostMeter(-movementSettings.boostJumpCost);
+					boostConsumable = false;
+					movementState |= MovementState.Jumping;
+					return true;
+				}
+				return false;
 			}
 			#endregion
 			Vector2 moveVector = Vector2.positiveInfinity;
@@ -311,6 +370,7 @@ namespace Assets.Scripts
 
 							AddUIMessage("Enemy Bounce");
 							combo++;
+							UpdateBoostMeter(20);
 						}
 						var fApplied = Vector2.Scale(moveVector, movementSettings.jumpForce);
 						rb.AddForce(fApplied, ForceMode2D.Impulse);
@@ -331,7 +391,6 @@ namespace Assets.Scripts
 					moveVector = moveVector.IsFinite() ? moveVector : BasicMovement();
 					if (collisionState.HasFlag(CollisionState.EnemyCollider))
 					{
-						//movementState |= MovementState.Stumbling;
 						movementState ^= MovementState.Jumping;
 						EnterStumble();
 					}
@@ -342,15 +401,11 @@ namespace Assets.Scripts
 					}
 					else if (collisionState.HasFlag(CollisionState.BGWall) && JumpPressedOnThisFrame && Velocity.x != 0)
 					{
-						var vel = Velocity;
-						hangTime = Mathf.Abs(vel.x * Mathf.Sin(movementSettings.wallRunAngle));
-						wallrunStartDir = (vel.x > 0) ? 1 : -1;
-						vel.x *= Mathf.Cos(movementSettings.wallRunAngle);
-						rb.velocity = vel;
-						rb.AddForce(new(0, hangTime));
-						movementState |= MovementState.Wallrunning;
 						movementState ^= MovementState.Jumping;
+						EnterWallrunning();
 					}
+					else
+						TryBoostJumping(moveVector);
 					if (movementState.HasFlag(MovementState.Invincible))
 						goto case MovementState.Invincible;
 					break;
@@ -382,15 +437,17 @@ namespace Assets.Scripts
 				{
 					moveVector = moveVector.IsFinite() ? moveVector : BasicMovement();
 					if (collisionState == CollisionState.None || collisionState == CollisionState.BGWall)
-						break;
+					{
+						if (TryBoostJumping(moveVector))
+							movementState ^= MovementState.Falling;
+					}
 					else if (collisionState.HasFlag(CollisionState.EnemyTrigger))
 					{
-						//movementState |= MovementState.Grounded;
 						movementState ^= MovementState.Falling;
 						EnterGrounded();
 						goto case MovementState.Grounded;
 					}
-					else if (((collisionState.HasFlag(CollisionState.Ground) && /*Velocity.y*/CachedVelocity.y < movementSettings.maxSafeFallSpeed) || collisionState.HasFlag(CollisionState.EnemyCollider)) && !movementState.HasFlag(MovementState.Invincible))
+					else if (((collisionState.HasFlag(CollisionState.Ground) && CachedVelocity.y < movementSettings.maxSafeFallSpeed) || collisionState.HasFlag(CollisionState.EnemyCollider)) && !movementState.HasFlag(MovementState.Invincible))
 					{
 						if (input.IsPressed("DownAction"))
 						{
@@ -406,11 +463,12 @@ namespace Assets.Scripts
 					}
 					else if (collisionState.HasFlag(CollisionState.Ground))
 					{
-						//Debug.Log($"Velocity.y {Velocity.y}");
-						//movementState |= MovementState.Grounded;
 						movementState ^= MovementState.Falling;
 						EnterGrounded();
 					}
+					//else
+					//	if (TryBoostJumping(moveVector))
+					//		movementState ^= MovementState.Falling;
 					if (movementState.HasFlag(MovementState.Invincible))
 						goto case MovementState.Invincible;
 					break;
@@ -423,10 +481,8 @@ namespace Assets.Scripts
 					{
 						AddUIMessage("Back up!");
 						//Physics2D.IgnoreLayerCollision(LayerMask.NameToLayer("Default"), LayerMask.NameToLayer("Enemy"), false);
-						//movementState |= MovementState.Grounded;
 						invincibleTimer = movementSettings.invincibleTimerLength;
 						movementState |= MovementState.Invincible;
-						//movementState |= MovementState.Grounded;
 						EnterGrounded();
 						movementState ^= MovementState.Stumbling;
 					}
@@ -439,12 +495,10 @@ namespace Assets.Scripts
 					invincibleTimer -= Time.fixedDeltaTime;
 					if (invincibleTimer <= 0f || (rb.OverlapCollider(GlobalConstants.EnemyLayer/*enemyLayer*/, enemyCollidersOverlapped) <= 0 && collisionState.HasFlag(CollisionState.Ground)))
 					{
-						//AddUIMessage("Back up!");
 						var c = spriteRenderer.color;
 						c.a = 1f;
 						spriteRenderer.color = c;
 						Physics2D.IgnoreLayerCollision(LayerMask.NameToLayer("Default"), LayerMask.NameToLayer("Enemy"), false);
-						//movementState |= MovementState.Grounded;
 						movementState ^= MovementState.Invincible;
 					}
 					break;
@@ -527,9 +581,11 @@ namespace Assets.Scripts
 			// Update speed display after application of forces.
 			UpdateSpeedText();
 
-			// Reset jump inputs
+			// Reset jump/boost inputs
 			jumpPressedLastFrame = jumpPressedThisFrame;
 			jumpPressedThisFrame = false;
+			boostPressedLastFrame = boostPressedThisFrame;
+			boostPressedThisFrame = false;
 
 			cachedVelocity = preCollisionVelocity = Velocity;
 			#endregion
@@ -541,6 +597,7 @@ namespace Assets.Scripts
 		public TMP_Text messages;
 		public TMP_Text scoreText;
 		public DamageIndicator damageIndicator;
+		public Slider boostMeterUI;
 		#endregion
 		const float WARNING_RANGE = .25f;
 		//bool showY = true;
@@ -592,15 +649,38 @@ namespace Assets.Scripts
 				if (messagesStored[i] != "")
 					messages.text = $"<style=\"m{i + 1}\">{messagesStored[i]}</style>\r\n{messages.text}";
 		}
+		
+		// TODO: boostMeter and score uint weirdness check
+		#region Boost Meter
+		public void UpdateBoostMeter(int delta)
+		{
+			if (delta < 0)
+				boostMeter -= (boostMeter < -delta) ? 0 - boostMeter : (uint)-delta;
+			else
+				boostMeter += (uint)delta;
+			boostMeterUI.value = (boostMeter > boostMeterUI.maxValue) ? boostMeterUI.maxValue : boostMeter;
+			if (boostMeter >= movementSettings.boostJumpCost)
+				boostMeterUI.fillRect.GetComponent<Image>().color = Color.green;
+			else if (boostMeter >= movementSettings.boostRunCost)
+				boostMeterUI.fillRect.GetComponent<Image>().color = Color.yellow;
+			else
+				boostMeterUI.fillRect.GetComponent<Image>().color = Color.red;
+		}
+		public void ResetBoostMeter()
+		{
+			boostMeter = 0;
+			UpdateBoostMeter(0);
+		}
+		#endregion
 
 		#region Score
 		public uint score = 0;
-		public void UpdateScore(int change)
+		public void UpdateScore(int delta)
 		{
-			if (change < 0)
-				score -= (score < -change) ? 0 - score : (uint)-change;
+			if (delta < 0)
+				score -= (score < -delta) ? 0 - score : (uint)-delta;
 			else
-				score += (uint)change;
+				score += (uint)delta;
 			string sText;
 			if (score >= 100000000) sText = "";
 			else if (score >= 10000000) sText = "0";
@@ -614,6 +694,11 @@ namespace Assets.Scripts
 			else sText = "00000000";
 			scoreText.text = sText + score;
 			Debug.Assert(scoreText.text.Length == 9);
+		}
+		public void ResetScore()
+		{
+			score = 0;
+			UpdateScore(0);
 		}
 		#endregion
 
@@ -633,8 +718,15 @@ namespace Assets.Scripts
 		}
 		#endregion
 
+		public void OnFirearmHit(int scoreValue, int boostValue)
+		{
+			UpdateScore(scoreValue);
+			UpdateBoostMeter(boostValue);
+		}
+
 		void OnRenderObject() => DrawPositionIndicator();
 
+		#region Collision Updates
 		readonly List<Enemy> currentEnemyCollisions = new(3);
 		#region OnCollision
 		// TODO: Resolve bad wall jumping (check collider.max against collided.min and vice versa)
@@ -705,6 +797,7 @@ namespace Assets.Scripts
 				collisionState ^= CollisionState.BGWall;
 			}
 		}
+		#endregion
 		#endregion
 	}
 }

@@ -5,7 +5,6 @@ namespace Assets.ScriptableObjects
 	[CreateAssetMenu(fileName = "mvt_PlayerMovement0", menuName = "ScriptableObjects/Movement Settings")]
     public class MovementSettings : ScriptableObject
     {
-		#region Movement Settings
 		[Tooltip("The force applied when using the movement actions.")]
 		public Vector2 moveForce = new(1f, 1f);
 		[Tooltip("\"Endless Runner Mode\". Apply a constant displacement and use a different move force.")]
@@ -28,6 +27,10 @@ namespace Assets.ScriptableObjects
 		[Tooltip("The angle of attack, in degrees, for wall runs. Determines loss of horizontal speed and hang time.")]
 		[Range(0, 90)]
 		public float wallRunAngle = 5f;
+
+		#region Boost Fields
+		public int boostJumpCost = 50;
+		public int boostRunCost = 20;
 		#endregion
 	}
 }

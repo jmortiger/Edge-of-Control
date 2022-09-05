@@ -243,7 +243,8 @@ namespace Assets.Scripts
 			var p = FindObjectOfType<Player>();
 			p.transform.position = new(0, 7.233036f, 0);
 			p.combo = 0;
-			p.score = 0;
+			p.ResetBoostMeter();
+			p.ResetScore();
 
 			if (Main_Camera == null || VCam == null)
 				InitGameSceneAdditiveReferences();

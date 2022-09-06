@@ -10,6 +10,7 @@ using UnityEngine.UI;
 
 // TODO: Trim inspector stuff, handled in UIDocument.
 // TODO: Modify UIDocument to reflect new fields.
+// TODO: Modify UIDocument for view data key.
 namespace Assets.Scripts
 {
 	[RequireComponent(

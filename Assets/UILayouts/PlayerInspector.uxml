@@ -1,16 +1,16 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
-    <ui:Foldout text="References to my components" name="componentReferences" value="false">
+    <ui:Foldout text="References to my components" name="componentReferences" value="false" view-data-key="componentReferences">
         <uie:ObjectField label="PlayerInput:" binding-path="input" type="UnityEngine.InputSystem.PlayerInput, Unity.InputSystem" name="input" />
         <uie:ObjectField label="Rb2D:" binding-path="rb" focusable="true" type="UnityEngine.Rigidbody2D, UnityEngine.Physics2DModule" name="rb" />
         <uie:ObjectField label="Particle System" type="UnityEngine.ParticleSystem, UnityEngine.ParticleSystemModule" binding-path="particleSystem" name="particleSystem" />
     </ui:Foldout>
-    <ui:Foldout text="UI" name="ui" value="false">
+    <ui:Foldout text="UI" name="ui" value="false" view-data-key="ui">
         <uie:ObjectField label="Speed Text:" binding-path="speedText" type="TMPro.TMP_Text, Unity.TextMeshPro" name="speedText" />
         <uie:ObjectField label="Messages:" binding-path="messages" type="TMPro.TMP_Text, Unity.TextMeshPro" name="messages" />
         <uie:ObjectField label="scoreText" binding-path="scoreText" name="scoreText" type="TMPro.TMP_Text, Unity.TextMeshPro" />
         <uie:ObjectField label="Damage Indicator" type="Assets.Scripts.DamageIndicator, Assembly-CSharp" binding-path="damageIndicator" name="damageIndicator" />
     </ui:Foldout>
-    <ui:Foldout text="Camera Orthographic Size" name="camSettings" tooltip="Scales orthograpic size as speed increases." value="false">
+    <ui:Foldout text="Camera Orthographic Size" name="camSettings" tooltip="Scales orthograpic size as speed increases." value="false" view-data-key="camSettings">
         <uie:ObjectField label="My Cam:" binding-path="myCam" type="Cinemachine.CinemachineVirtualCamera, Cinemachine" name="myCam" />
         <uie:ObjectField label="Unity Cam:" binding-path="cam" type="UnityEngine.Camera, UnityEngine.CoreModule" name="cam" />
         <uie:ObjectField label="Camera Settings" allow-scene-objects="false" type="Assets.ScriptableObjects.CameraSettings, Assembly-CSharp" name="cameraSettings" binding-path="cameraSettings" />
@@ -24,8 +24,9 @@
         <ui:Slider picking-mode="Ignore" label="Base for Orthographic Size Function:" value="1.25" high-value="1.5" show-input-field="true" low-value="1" binding-path="cameraSettings.baseForCamSizeFunction" tooltip="b" name="baseForCamSizeFunction" />
         <ui:IMGUIContainer name="camChart" />
     </ui:Foldout>
-    <ui:Foldout text="Movement Settings" name="movementSettings" value="false">
+    <ui:Foldout text="Movement Settings" name="movementSettings" value="false" view-data-key="movementSettings">
         <uie:ObjectField label="Movement Settings" allow-scene-objects="false" type="Assets.ScriptableObjects.MovementSettings, Assembly-CSharp" name="movementSettings" binding-path="movementSettings" />
+        <uie:PropertyField binding-path="movementSettings" label="Movement Settings" name="movementSettingsPropField" />
         <ui:Foldout text="Non-Runner Settings" name="nonRunnerSettings" value="false" style="margin-left: 0;">
             <uie:Vector2Field label="Move Force:" binding-path="movementSettings.moveForce" x="10" y="1" name="moveForce" />
         </ui:Foldout>
@@ -44,18 +45,18 @@
         <ui:Slider picking-mode="Ignore" label="rollTimerLength" value="1" high-value="5" binding-path="movementSettings.rollTimerLength" name="rollTimerLength" low-value="0.0001" show-input-field="true" />
         <uie:ObjectField label="rollInfo" allow-scene-objects="false" type="Assets.ScriptableObjects.RollAnimationInfo, Assembly-CSharp" name="rollInfo" binding-path="rollInfo" />
     </ui:Foldout>
-    <ui:Foldout text="SFX" name="sfx" value="false">
+    <ui:Foldout text="SFX" name="sfx" value="false" view-data-key="sfx">
         <uie:ObjectField label="sfx_Jump" type="UnityEngine.AudioClip, UnityEngine.AudioModule" binding-path="sfx_Jump" name="sfx_Jump" allow-scene-objects="false" />
         <uie:ObjectField label="sfx_Hurt" type="UnityEngine.AudioClip, UnityEngine.AudioModule" binding-path="sfx_Hurt" name="sfx_Hurt" allow-scene-objects="false" />
         <uie:ObjectField label="sfx_Running" type="UnityEngine.AudioClip, UnityEngine.AudioModule" binding-path="sfx_Running" name="sfx_Running" allow-scene-objects="false" />
         <uie:ObjectField label="sfx_Shotgun" type="UnityEngine.AudioClip, UnityEngine.AudioModule" binding-path="sfx_Shotgun" name="sfx_Shotgun" allow-scene-objects="false" />
         <uie:ObjectField label="sfx_group_Jump" type="Assets.ScriptableObjects.SFX_Group, Assembly-CSharp" binding-path="sfx_group_Jump" name="sfx_group_Jump" allow-scene-objects="false" />
     </ui:Foldout>
-    <ui:Foldout text="MIsc." name="misc" value="false">
+    <ui:Foldout text="MIsc." name="misc" value="false" view-data-key="misc">
         <ui:Slider picking-mode="Ignore" label="Stumble Timer Length:" value="1" high-value="10" binding-path="stumbleTimerLength" low-value="0.001" name="stumbleTimerLength" show-input-field="true" />
         <ui:Slider picking-mode="Ignore" label="Invincible Timer Length:" value="1" high-value="10" show-input-field="true" low-value="0.001" binding-path="invincibleTimerLength" name="invincibleTimerLength" />
     </ui:Foldout>
-    <ui:Foldout text="Info" name="info" value="false">
+    <ui:Foldout text="Info" name="info" value="false" view-data-key="info">
         <uie:EnumField label="Collision State" value="None" type="Assets.Scripts.Player+CollisionState, Assembly-CSharp" binding-path="collisionState" name="collisionState" focusable="false" picking-mode="Ignore" />
         <uie:EnumField label="Movement State" value="None" type="Assets.Scripts.Player+MovementState, Assembly-CSharp" binding-path="movementState" name="movementState" focusable="false" picking-mode="Ignore" />
         <uie:Vector2Field label="Velocity" binding-path="Velocity" name="Velocity" />

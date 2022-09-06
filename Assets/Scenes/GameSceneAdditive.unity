@@ -202,6 +202,18 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 579591279717093389, guid: e444299ea0a62c64ea6efe8d8baed035, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 579591279717093389, guid: e444299ea0a62c64ea6efe8d8baed035, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 579591279717093389, guid: e444299ea0a62c64ea6efe8d8baed035, type: 3}
+      propertyPath: m_AnchorMin.x
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3887995331845300955, guid: e444299ea0a62c64ea6efe8d8baed035, type: 3}
       propertyPath: m_Name
       value: Canvas(Level)
@@ -288,6 +300,14 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3887995331845300959, guid: e444299ea0a62c64ea6efe8d8baed035, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4390006016577604235, guid: e444299ea0a62c64ea6efe8d8baed035, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4390006016577604235, guid: e444299ea0a62c64ea6efe8d8baed035, type: 3}
+      propertyPath: m_AnchorMax.y
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
@@ -494,6 +514,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 639430461}
     - target: {fileID: 1492775944482201789, guid: 0b9cea0e484831f4f8a120bdea413127, type: 3}
+      propertyPath: boostMeterUI
+      value: 
+      objectReference: {fileID: 1100489518}
+    - target: {fileID: 1492775944482201789, guid: 0b9cea0e484831f4f8a120bdea413127, type: 3}
       propertyPath: damageIndicator
       value: 
       objectReference: {fileID: 345225325}
@@ -615,6 +639,17 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: a8531ea029b4ede4aa86792c5ee3849a, type: 3}
+--- !u!114 &1100489518 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8154544234400508249, guid: e444299ea0a62c64ea6efe8d8baed035, type: 3}
+  m_PrefabInstance: {fileID: 367192916}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67db9e8f0e2ae9c40bc1e2b64352a6b4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!114 &1708888654 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 1492775944482201789, guid: 0b9cea0e484831f4f8a120bdea413127, type: 3}

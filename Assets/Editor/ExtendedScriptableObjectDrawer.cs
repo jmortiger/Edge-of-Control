@@ -1,15 +1,12 @@
 // Developed by Tom Kail at Inkle
 // Released under the MIT Licence as held at https://opensource.org/licenses/MIT
 
+using Assets.Scripts;
 using System;
-using System.Reflection;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
-using Object = UnityEngine.Object;
-using Assets.Scripts;
-// TODO: Tweak so SO fields need to opt-in w/ attributes
+
 namespace Assets.EditorScripts
 {
 	/// <summary>
@@ -32,7 +29,7 @@ namespace Assets.EditorScripts
 			{
 				var data = property.objectReferenceValue as ScriptableObject;
 				if (data == null) return EditorGUIUtility.singleLineHeight;
-				SerializedObject serializedObject = new SerializedObject(data);
+				SerializedObject serializedObject = new(data);
 				SerializedProperty prop = serializedObject.GetIterator();
 				if (prop.NextVisible(true))
 				{
@@ -52,9 +49,9 @@ namespace Assets.EditorScripts
 			return totalHeight;
 		}
 
-		const int buttonWidth = 66;
+		const int BUTTON_WIDTH = 66;
 
-		static readonly List<string> ignoreClassFullNames = new List<string> { "TMPro.TMP_FontAsset" };
+		static readonly List<string> ignoreClassFullNames = new() { "TMPro.TMP_FontAsset" };
 
 		protected static Action<Rect, SerializedProperty, GUIContent> generateSubIMGUI;
 
@@ -76,7 +73,6 @@ namespace Assets.EditorScripts
 				propertySO = (ScriptableObject)property.serializedObject.targetObject;
 			}
 
-			var propertyRect = Rect.zero;
 			var guiContent = new GUIContent(property.displayName);
 			var foldoutRect = new Rect(position.x, position.y, position.width/*EditorGUIUtility.labelWidth*/, EditorGUIUtility.singleLineHeight);
 			if (property.objectReferenceValue != null && AreAnySubPropertiesVisible(property))
@@ -94,17 +90,18 @@ namespace Assets.EditorScripts
 			}
 			var indentedPosition = EditorGUI.IndentedRect(position);
 			var indentOffset = indentedPosition.x - position.x;
-			propertyRect = new Rect(position.x + (EditorGUIUtility.labelWidth - indentOffset), position.y, position.width - (EditorGUIUtility.labelWidth - indentOffset), EditorGUIUtility.singleLineHeight);
+
+			var propertyRect = new Rect(position.x + (EditorGUIUtility.labelWidth - indentOffset), position.y, position.width - (EditorGUIUtility.labelWidth - indentOffset), EditorGUIUtility.singleLineHeight);
 
 			if (propertySO != null || property.objectReferenceValue == null)
 			{
-				propertyRect.width -= buttonWidth;
+				propertyRect.width -= BUTTON_WIDTH;
 			}
 
 			EditorGUI.ObjectField(propertyRect, property, type, GUIContent.none);
 			if (GUI.changed) property.serializedObject.ApplyModifiedProperties();
 
-			var buttonRect = new Rect(position.x + position.width - buttonWidth, position.y, buttonWidth, EditorGUIUtility.singleLineHeight);
+			var buttonRect = new Rect(position.x + position.width - BUTTON_WIDTH, position.y, BUTTON_WIDTH, EditorGUIUtility.singleLineHeight);
 
 			if (property.propertyType == SerializedPropertyType.ObjectReference && property.objectReferenceValue != null)
 			{
@@ -116,7 +113,7 @@ namespace Assets.EditorScripts
 					GUI.Box(new Rect(position.x + indentOffset/*0*/, position.y + EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing - 1, position.width - indentOffset/*Screen.width*/, position.height - EditorGUIUtility.singleLineHeight - EditorGUIUtility.standardVerticalSpacing), "");
 
 					EditorGUI.indentLevel++;
-					SerializedObject serializedObject = new SerializedObject(data);
+					SerializedObject serializedObject = new(data);
 
 					// Iterate over all the values and draw them
 					SerializedProperty prop = serializedObject.GetIterator();
@@ -206,7 +203,7 @@ namespace Assets.EditorScripts
 			}
 			else
 			{
-				if (GUILayout.Button("Create", GUILayout.Width(buttonWidth)))
+				if (GUILayout.Button("Create", GUILayout.Width(BUTTON_WIDTH)))
 				{
 					string selectedAssetPath = "Assets";
 					var newAsset = CreateAssetWithSavePrompt(typeof(T), selectedAssetPath);
@@ -289,7 +286,7 @@ namespace Assets.EditorScripts
 			}
 			else
 			{
-				if (GUILayout.Button("Create", GUILayout.Width(buttonWidth)))
+				if (GUILayout.Button("Create", GUILayout.Width(BUTTON_WIDTH)))
 				{
 					string selectedAssetPath = "Assets";
 					var newAsset = CreateAssetWithSavePrompt(typeof(T), selectedAssetPath);
@@ -329,7 +326,7 @@ namespace Assets.EditorScripts
 		static bool AreAnySubPropertiesVisible(SerializedProperty property)
 		{
 			var data = (ScriptableObject)property.objectReferenceValue;
-			SerializedObject serializedObject = new SerializedObject(data);
+			SerializedObject serializedObject = new(data);
 			SerializedProperty prop = serializedObject.GetIterator();
 			while (prop.NextVisible(true))
 			{

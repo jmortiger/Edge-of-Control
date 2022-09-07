@@ -6,6 +6,7 @@ namespace Assets.ScriptableObjects
 	/// Controls the player's collider during the roll based of animation frame timings and dimensions.
 	/// </summary>
 	[CreateAssetMenu(fileName = "player_roll_RollAnimationInfo", menuName = "ScriptableObjects/Roll Animation Info")]
+	// TODO: This is also used for coil jumps. Refactor to reflect.
 	public class RollAnimationInfo : ScriptableObject
 	{
 		[Tooltip("How much of the total roll time is spent in the lead up to the roll?")]

@@ -2,7 +2,6 @@ using System;
 using TMPro;
 using UnityEngine;
 
-// TODO: Refactor to ScriptableObject
 namespace Assets.Scripts
 {
 	public class Goalpost : MonoBehaviour

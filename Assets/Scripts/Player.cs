@@ -10,7 +10,6 @@ using UnityEngine.UI;
 
 // TODO: Trim inspector stuff, handled in UIDocument.
 // TODO: Modify UIDocument to reflect new fields.
-// TODO: Modify UIDocument for view data key.
 namespace Assets.Scripts
 {
 	#region RequireComponent
@@ -128,14 +127,15 @@ namespace Assets.Scripts
 		[Flags]
 		public enum MovementState
 		{
-			None = 0x0000_0000,
-			Grounded = 0x0000_0001,
-			Jumping = 0x0000_0010,
-			Wallrunning = 0x0000_0100,
-			Falling = 0x0000_1000,
-			Stumbling = 0x0001_0000,
-			Invincible = 0x0010_0000,
-			Rolling = 0x0100_0000,
+			None		= 0x0000_0000,
+			Grounded	= 0x0000_0001,
+			Jumping		= 0x0000_0010,
+			Wallrunning	= 0x0000_0100,
+			Falling		= 0x0000_1000,
+			Stumbling	= 0x0001_0000,
+			Invincible	= 0x0010_0000,
+			Rolling		= 0x0100_0000,
+			Coiling		= 0x1000_0000,
 		}
 		[SerializeField]
 		MovementState movementState = MovementState.None;
@@ -162,7 +162,9 @@ namespace Assets.Scripts
 		#endregion
 		float stumbleTimer = 0;
 		float invincibleTimer = 0;
+		float coilTimer = 0;
 		bool boostConsumable = false;
+		bool coilConsumable = false;
 		#endregion
 		readonly Collider2D[] enemyCollidersOverlapped = new Collider2D[3];
 		[SerializeField] uint jumpPresses = 0;
@@ -170,17 +172,20 @@ namespace Assets.Scripts
 		public uint boostMeter = 0;
 
 		public RollAnimationInfo rollInfo;
+		public RollAnimationInfo coilInfo;
 
 		// TOOD: Test aerial and grounded movement.
 		// TODO: Troubleshoot landing on enemies problem.
 		// TODO: Add combo timer
 		// TODO: Tweak wall run
 		// TODO: Check for refactors from Velocity to Cached Velocity.
-		// TODO: Add coil jump
 		// TODO: Add boost run
 		// TODO: Add auditory feedback for fatal/damaging falls (like Mirror's Edge).
 		// TODO: Add 2-stage jump w/ 2nd stage having increased gravity (https://youtu.be/ep_9RtAbwog?t=154)
 		// TODO: Switch from physics-based movement to scripted movement.
+		// TODO: Expand compatible states (i.e. falling and coiling, jumping and invincible).
+		// TODO: Add toggleable state machine testing.
+		// TODO: Test coil jump.
 		void FixedUpdate()
 		{
 			#region Debug Jump Checks
@@ -208,6 +213,7 @@ namespace Assets.Scripts
 					rb.AddForce(Vector2.Scale(moveVector, moveForce/*movementSettings.moveForce*/));
 				return moveVector;
 			}
+			#region Enter State
 			void EnterStumble()
 			{
 				movementState |= MovementState.Stumbling;
@@ -256,6 +262,7 @@ namespace Assets.Scripts
 			{
 				movementState |= MovementState.Grounded;
 				boostConsumable = true;
+				coilConsumable = true;
 				particleSystem.Play(true);
 			}
 			void EnterRolling()
@@ -276,8 +283,65 @@ namespace Assets.Scripts
 				rb.velocity = vel;
 				rb.AddForce(new(0, hangTime));
 				boostConsumable = true;
+				coilConsumable = true;
 				movementState |= MovementState.Wallrunning;
 			}
+			#endregion
+			#region Coil State
+			void EnterCoiling()
+			{
+				movementState |= MovementState.Coiling;
+				coilTimer = movementSettings.coilTimerLength;
+				coilConsumable = false;
+				AddUIMessage("Coil Jump");
+			}
+			void UpdateCoilState()
+			{
+				//moveVector = moveVector.IsFinite() ? moveVector : BasicMovement();
+				coilTimer -= Time.fixedDeltaTime;
+				// TODO: Apply DRY to following 2 ifs
+				if (collisionState.HasFlag(CollisionState.EnemyCollider))
+				{
+					ExitCoiling();
+					EnterStumble();
+				}
+				else if (coilTimer <= 0f || (/*rb.OverlapCollider(GlobalConstants.EnemyLayer, enemyCollidersOverlapped) <= 0 && */collisionState.HasFlag(CollisionState.Ground)))
+					ExitCoiling();
+				else
+				{
+					coilTimer = (coilTimer < 0) ? 0 : coilTimer;
+
+					float GetCoilHeightAtTime(float coilTimer)
+					{
+						if (coilTimer <= coilInfo.entranceLengthRatio * movementSettings.coilTimerLength)
+							return Mathf.SmoothStep(colliderInitialDimensions.y, colliderInitialDimensions.y * coilInfo.minHeightRatio, coilTimer / (movementSettings.coilTimerLength / 2));
+						else if (coilTimer <= (coilInfo.entranceLengthRatio + coilInfo.properLengthRatio) * movementSettings.coilTimerLength)
+							return colliderInitialDimensions.y * coilInfo.minHeightRatio;
+						else
+							return Mathf.SmoothStep(colliderInitialDimensions.y * coilInfo.minHeightRatio, colliderInitialDimensions.y, (coilTimer / (movementSettings.coilTimerLength / 2)) - 1);
+					}
+					var h = GetCoilHeightAtTime(coilTimer);
+
+					MyCapsule.size = new(colliderInitialDimensions.x, h);
+
+					// TODO: Remove when using animations
+					//var srb = spriteRenderer.bounds;
+					//srb.size = new Vector3(colliderInitialDimensions.x, h, rendererInitialDimensions.z);//srb.size.z);
+					//spriteRenderer.bounds = srb;
+				}
+			}
+			void ExitCoiling()
+			{
+				MyCapsule.size = colliderInitialDimensions;
+
+				// TODO: Remove when using animations
+				//var srb = spriteRenderer.bounds;
+				//srb.size = rendererInitialDimensions;//new Vector3(colliderInitialDimensions.x, colliderInitialDimensions.y, srb.size.z);
+				//spriteRenderer.bounds = srb;
+
+				movementState ^= MovementState.Coiling;
+			}
+			#endregion
 			bool TryBoostJumping(Vector2 moveVector)
 			{
 				if (JumpPressedOnThisFrame && input.IsPressed("Boost") && boostConsumable && boostMeter >= movementSettings.boostJumpCost)
@@ -308,7 +372,7 @@ namespace Assets.Scripts
 			}
 			#endregion
 			Vector2 moveVector = Vector2.positiveInfinity;
-			Vector2 moveForceGround = (movementSettings.isAerialAndGroundedMovementUnique) ? movementSettings.moveForceGrounded : movementSettings.moveForce;
+			Vector2 moveForceGround = (movementSettings.isAerialAndGroundedMovementUnique) ? movementSettings.moveForceGround : movementSettings.moveForce;
 			Vector2 moveForceAerial = (movementSettings.isAerialAndGroundedMovementUnique) ? movementSettings.moveForceAerial : movementSettings.moveForce;
 			switch (movementState)
 			{
@@ -408,14 +472,26 @@ namespace Assets.Scripts
 					{
 						movementState |= MovementState.Falling;
 						movementState ^= MovementState.Jumping;
+						if (!TryBoostJumping(moveVector) && input.FindAction(GlobalConstants.GetNames(InputActionNames.DownAction)).IsPressed() && coilConsumable)
+							EnterCoiling();
 					}
 					else if (collisionState.HasFlag(CollisionState.BGWall) && JumpPressedOnThisFrame && Velocity.x != 0)
 					{
 						movementState ^= MovementState.Jumping;
 						EnterWallrunning();
 					}
-					else
-						TryBoostJumping(moveVector);
+					else if (!TryBoostJumping(moveVector) && input.FindAction(GlobalConstants.GetNames(InputActionNames.DownAction)).IsPressed() && coilConsumable)
+						EnterCoiling();
+					if (movementState.HasFlag(MovementState.Coiling))
+					{
+						if (!movementState.HasFlag(MovementState.Jumping) && !movementState.HasFlag(MovementState.Falling))
+							ExitCoiling();
+						else
+						{
+							//goto case MovementState.Coiling;
+							UpdateCoilState();
+						}
+					}
 					if (movementState.HasFlag(MovementState.Invincible))
 						goto case MovementState.Invincible;
 					break;
@@ -450,6 +526,8 @@ namespace Assets.Scripts
 					{
 						if (TryBoostJumping(moveVector))
 							movementState ^= MovementState.Falling;
+						else if (input.FindAction(GlobalConstants.GetNames(InputActionNames.DownAction)).IsPressed() && coilConsumable)
+							EnterCoiling();
 					}
 					else if (collisionState.HasFlag(CollisionState.EnemyTrigger))
 					{
@@ -476,9 +554,16 @@ namespace Assets.Scripts
 						movementState ^= MovementState.Falling;
 						EnterGrounded();
 					}
-					//else
-					//	if (TryBoostJumping(moveVector))
-					//		movementState ^= MovementState.Falling;
+					if (movementState.HasFlag(MovementState.Coiling))
+					{
+						if (!movementState.HasFlag(MovementState.Jumping) && !movementState.HasFlag(MovementState.Falling))
+							ExitCoiling();
+						else
+						{
+							//goto case MovementState.Coiling;
+							UpdateCoilState();
+						}
+					}
 					if (movementState.HasFlag(MovementState.Invincible))
 						goto case MovementState.Invincible;
 					break;
@@ -572,6 +657,12 @@ namespace Assets.Scripts
 						//srb.size = new Vector3(colliderInitialDimensions.x, h, rendererInitialDimensions.z);//srb.size.z);
 						//spriteRenderer.bounds = srb;
 					}
+					break;
+				}
+				case var t when t.HasFlag(MovementState.Coiling):
+				case MovementState.Coiling:
+				{
+					UpdateCoilState();
 					break;
 				}
 				case MovementState.None:

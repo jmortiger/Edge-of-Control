@@ -27,15 +27,15 @@
     <ui:Foldout text="Movement Settings" name="movementSettings" value="false" view-data-key="movementSettings">
         <uie:ObjectField label="Movement Settings" allow-scene-objects="false" type="Assets.ScriptableObjects.MovementSettings, Assembly-CSharp" name="movementSettings" binding-path="movementSettings" />
         <uie:PropertyField binding-path="movementSettings" label="Movement Settings" name="movementSettingsPropField" />
-        <ui:Foldout text="Non-Runner Settings" name="nonRunnerSettings" value="false" style="margin-left: 0;">
+        <ui:Foldout text="Non-Runner Settings" name="nonRunnerSettings" value="false" view-data-key="nonRunnerSettings" style="margin-left: 0;">
             <uie:Vector2Field label="Move Force:" binding-path="movementSettings.moveForce" x="10" y="1" name="moveForce" />
         </ui:Foldout>
-        <ui:Foldout text="Runner Settings" name="runnerSettings" value="false" style="margin-left: 0;">
+        <ui:Foldout text="Runner Settings" name="runnerSettings" value="false" view-data-key="runnerSettings" style="margin-left: 0;">
             <ui:Toggle label="Is Constant Movement Enabled?" binding-path="movementSettings.isConstantMovementEnabled" tooltip="&quot;Endless Runner Mode&quot;. Apply a constant displacement and use a different move force." name="isConstantMovementEnabled" />
             <uie:Vector2Field label="Constant Movement Displacement:" binding-path="movementSettings.constantMovementDisplacement" tooltip="The constant displacement applied under endless runner mode." x="5" name="constantMovementDisplacement" />
             <uie:Vector2Field label="Constant Move Force:" binding-path="movementSettings.constantMoveForce" x="5" y="1" tooltip="The force applied when using the movement actions if endless runner mode is on." name="constantMoveForce" />
         </ui:Foldout>
-        <ui:Foldout text="Jump Stuff" name="jumpStuff" value="false" style="margin-left: 0;">
+        <ui:Foldout text="Jump Stuff" name="jumpStuff" value="false" view-data-key="jumpStuff" style="margin-left: 0;">
             <uie:Vector2Field label="Jump Force:" binding-path="movementSettings.jumpForce" x="0.5" y="9" name="jumpForce" />
             <ui:Slider picking-mode="Ignore" label="Max Safe Fall Speed:" value="-10" high-value="0" show-input-field="true" low-value="-20" binding-path="movementSettings.maxSafeFallSpeed" name="maxSafeFallSpeed" inverted="true" />
             <ui:Slider picking-mode="Ignore" label="Conserved Velocity:" value="0.6" high-value="1" binding-path="movementSettings.conservedVelocity" name="conservedVelocity" show-input-field="true" tooltip="The amount of velocity conserved when jumping off enemies&apos; heads." />
@@ -44,6 +44,7 @@
         <ui:Slider picking-mode="Ignore" label="rollSpeed" value="3" high-value="50" binding-path="movementSettings.rollSpeed" name="rollSpeed" low-value="0.0001" show-input-field="true" />
         <ui:Slider picking-mode="Ignore" label="rollTimerLength" value="1" high-value="5" binding-path="movementSettings.rollTimerLength" name="rollTimerLength" low-value="0.0001" show-input-field="true" />
         <uie:ObjectField label="rollInfo" allow-scene-objects="false" type="Assets.ScriptableObjects.RollAnimationInfo, Assembly-CSharp" name="rollInfo" binding-path="rollInfo" />
+        <uie:ObjectField label="coilInfo" allow-scene-objects="false" type="Assets.ScriptableObjects.RollAnimationInfo, Assembly-CSharp" name="coilInfo" binding-path="coilInfo" />
     </ui:Foldout>
     <ui:Foldout text="SFX" name="sfx" value="false" view-data-key="sfx">
         <uie:ObjectField label="sfx_Jump" type="UnityEngine.AudioClip, UnityEngine.AudioModule" binding-path="sfx_Jump" name="sfx_Jump" allow-scene-objects="false" />

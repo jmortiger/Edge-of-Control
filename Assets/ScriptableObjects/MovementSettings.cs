@@ -44,7 +44,7 @@ namespace Assets.ScriptableObjects
 		[Tooltip("If true, use the aerial and grounded move forces instead of their generic equivalents.")]
 		public bool isAerialAndGroundedMovementUnique = false;
 		[Tooltip("The force applied when using the movement actions on the ground.")]
-		public Vector2 moveForceGrounded = new(1f, 1f);
+		public Vector2 moveForceGround = new(1f, 1f);
 		[Tooltip("The force applied when using the movement actions in the air.")]
 		public Vector2 moveForceAerial = new(1f, 1f);
 		#endregion
@@ -53,9 +53,13 @@ namespace Assets.ScriptableObjects
 		[Range(.0001f, 20f)]
 		public float stumbleTimerLength = 1f;
 		
-		[Tooltip("How long does a stumble last?")]
+		[Tooltip("How long does invincibility last?")]
 		[Range(.0001f, 20f)]
 		public float invincibleTimerLength = 1f;
+
+		[Tooltip("How long do coils (curling when aerial to clear obstacles) last?")]
+		[Range(.0001f, 10f)]
+		public float coilTimerLength = 1f;
 
 		[Tooltip("If the velocity's y component is greater than this (absolute value), landing on the ground w/o rolling will cause them to stumble.")]
 		[Range(float.MinValue, 0)]

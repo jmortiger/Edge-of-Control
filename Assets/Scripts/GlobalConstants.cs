@@ -64,5 +64,17 @@ namespace Assets.Scripts
 		#endregion
 		#endregion
 
+		public static string GetNames(this InputActionNames ian) => ian.ToString();
+	}
+	public enum InputActionNames
+	{
+		Move,
+		Look,
+		Fire,
+		DebugReset,
+		Aim,
+		Jump,//UpAction
+		Boost,
+		DownAction,
 	}
 }

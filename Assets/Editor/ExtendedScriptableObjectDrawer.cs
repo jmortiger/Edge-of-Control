@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using Object = UnityEngine.Object;
+using Assets.Scripts;
 // TODO: Tweak so SO fields need to opt-in w/ attributes
 namespace Assets.EditorScripts
 {
@@ -16,7 +17,7 @@ namespace Assets.EditorScripts
 	/// Shows you all values under the object reference
 	/// Also provides a button to create a new ScriptableObject if property is null.
 	/// </summary>
-	[CustomPropertyDrawer(typeof(ScriptableObject), true)]
+	[CustomPropertyDrawer(typeof(ExpandableAttribute/*ScriptableObject*/), true)]
 	public class ExtendedScriptableObjectDrawer : PropertyDrawer
 	{
 
@@ -55,6 +56,8 @@ namespace Assets.EditorScripts
 
 		static readonly List<string> ignoreClassFullNames = new List<string> { "TMPro.TMP_FontAsset" };
 
+		protected static Action<Rect, SerializedProperty, GUIContent> generateSubIMGUI;
+
 		public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
 		{
 			EditorGUI.BeginProperty(position, label, property);
@@ -75,7 +78,7 @@ namespace Assets.EditorScripts
 
 			var propertyRect = Rect.zero;
 			var guiContent = new GUIContent(property.displayName);
-			var foldoutRect = new Rect(position.x, position.y, EditorGUIUtility.labelWidth, EditorGUIUtility.singleLineHeight);
+			var foldoutRect = new Rect(position.x, position.y, position.width/*EditorGUIUtility.labelWidth*/, EditorGUIUtility.singleLineHeight);
 			if (property.objectReferenceValue != null && AreAnySubPropertiesVisible(property))
 			{
 				property.isExpanded = EditorGUI.Foldout(foldoutRect, property.isExpanded, guiContent, true);
@@ -110,7 +113,7 @@ namespace Assets.EditorScripts
 				if (property.isExpanded)
 				{
 					// Draw a background that shows us clearly which fields are part of the ScriptableObject
-					GUI.Box(new Rect(0, position.y + EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing - 1, Screen.width, position.height - EditorGUIUtility.singleLineHeight - EditorGUIUtility.standardVerticalSpacing), "");
+					GUI.Box(new Rect(position.x + indentOffset/*0*/, position.y + EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing - 1, position.width - indentOffset/*Screen.width*/, position.height - EditorGUIUtility.singleLineHeight - EditorGUIUtility.standardVerticalSpacing), "");
 
 					EditorGUI.indentLevel++;
 					SerializedObject serializedObject = new SerializedObject(data);
@@ -125,10 +128,11 @@ namespace Assets.EditorScripts
 							// Don't bother drawing the class file
 							if (prop.name == "m_Script") continue;
 							float height = EditorGUI.GetPropertyHeight(prop, new GUIContent(prop.displayName), true);
-							EditorGUI.PropertyField(new Rect(position.x, y, position.width - buttonWidth, height), prop, true);
+							EditorGUI.PropertyField(new Rect(position.x, y, position.width - indentOffset/*position.width - buttonWidth*/, height), prop, true);
 							y += height + EditorGUIUtility.standardVerticalSpacing;
 						}
 						while (prop.NextVisible(false));
+						generateSubIMGUI?.Invoke(new Rect(position.x, y, position.width - indentOffset/*position.width - buttonWidth*/, position.height), serializedObject.GetIterator(), new GUIContent("Dynamic"));
 					}
 					if (GUI.changed)
 						serializedObject.ApplyModifiedProperties();

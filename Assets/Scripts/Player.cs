@@ -13,27 +13,26 @@ using UnityEngine.UI;
 // TODO: Modify UIDocument for view data key.
 namespace Assets.Scripts
 {
-	[RequireComponent(
-		typeof(Collider2D),
-		typeof(PlayerInput),
-		typeof(Rigidbody2D)
-		)]
+	#region RequireComponent
+	[RequireComponent(typeof(AudioSource))]
+	[RequireComponent(typeof(CinemachineImpulseSource))]
+	[RequireComponent(typeof(Collider2D))]
+	[RequireComponent(typeof(ParticleSystem))]
+	[RequireComponent(typeof(PlayerInput))]
+	[RequireComponent(typeof(Rigidbody2D))]
+	[RequireComponent(typeof(SpriteRenderer))]
+	#endregion
 	public class Player : MonoBehaviour
 	{
 		#region Component References
-		[SerializeField]
-		new Collider2D collider;
+		[SerializeField] new Collider2D collider;
 		CapsuleCollider2D MyCapsule { get => (CapsuleCollider2D)collider; }
 		public PlayerInput input;
 		public Rigidbody2D rb;
-		[SerializeField]
-		CinemachineImpulseSource impulseSource;
-		[SerializeField]
-		SpriteRenderer spriteRenderer;
-		[SerializeField]
-		AudioSource aSource;
-		[SerializeField]
-		new ParticleSystem particleSystem;
+		[SerializeField] CinemachineImpulseSource impulseSource;
+		[SerializeField] SpriteRenderer spriteRenderer;
+		[SerializeField] AudioSource aSource;
+		[SerializeField] new ParticleSystem particleSystem;
 		[ContextMenu("Assign Component References")]
 		void AssignComponentReferences()
 		{
@@ -91,12 +90,17 @@ namespace Assets.Scripts
 		/// Used to restore size after rolling.
 		/// </summary>
 		private Vector2 colliderInitialDimensions;
+		///// <summary>
+		///// Used to restore size after rolling.
+		///// </summary>
+		//private Vector3 rendererInitialDimensions;
 		void Start()
 		{
 			aSource.clip = sfx_Running;
 			aSource.loop = true;
 
 			colliderInitialDimensions = collider.bounds.size;
+			//rendererInitialDimensions = spriteRenderer.bounds.size;
 		}
 		#endregion
 
@@ -174,7 +178,9 @@ namespace Assets.Scripts
 		// TODO: Check for refactors from Velocity to Cached Velocity.
 		// TODO: Add coil jump
 		// TODO: Add boost run
-		// TODO: Add auditory feedback for fatal/damaging jumps (like Mirror's Edge).
+		// TODO: Add auditory feedback for fatal/damaging falls (like Mirror's Edge).
+		// TODO: Add 2-stage jump w/ 2nd stage having increased gravity (https://youtu.be/ep_9RtAbwog?t=154)
+		// TODO: Switch from physics-based movement to scripted movement.
 		void FixedUpdate()
 		{
 			#region Debug Jump Checks
@@ -510,14 +516,15 @@ namespace Assets.Scripts
 					//moveVector = moveVector.IsFinite() ? moveVector : BasicMovement();
 					//transform.position += new Vector3(movementSettings.rollSpeed * Time.fixedDeltaTime * (rollRight ? 1 : -1), 0f, 0f);
 					rollTimer -= Time.fixedDeltaTime;
+					// TODO: Apply DRY to following 2 ifs
 					if (collisionState.HasFlag(CollisionState.EnemyCollider))
 					{
 						MyCapsule.size = colliderInitialDimensions;
 
 						// TODO: Remove when using animations
-						var srb = spriteRenderer.bounds;
-						srb.size = new Vector3(colliderInitialDimensions.x, colliderInitialDimensions.y, srb.size.z);
-						spriteRenderer.bounds = srb;
+						//var srb = spriteRenderer.bounds;
+						//srb.size = rendererInitialDimensions;//new Vector3(colliderInitialDimensions.x, colliderInitialDimensions.y, srb.size.z);
+						//spriteRenderer.bounds = srb;
 
 						movementState ^= MovementState.Rolling;
 						EnterStumble();
@@ -530,9 +537,9 @@ namespace Assets.Scripts
 						MyCapsule.size = colliderInitialDimensions;
 						
 						// TODO: Remove when using animations
-						var srb = spriteRenderer.bounds;
-						srb.size = new Vector3(colliderInitialDimensions.x, colliderInitialDimensions.y, srb.size.z);
-						spriteRenderer.bounds = srb;
+						//var srb = spriteRenderer.bounds;
+						//srb.size = rendererInitialDimensions;//new Vector3(colliderInitialDimensions.x, colliderInitialDimensions.y, srb.size.z);
+						//spriteRenderer.bounds = srb;
 						
 						//movementState |= MovementState.Grounded;
 						movementState ^= MovementState.Rolling;
@@ -558,9 +565,9 @@ namespace Assets.Scripts
 						MyCapsule.size = new(colliderInitialDimensions.x, h);
 
 						// TODO: Remove when using animations
-						var srb = spriteRenderer.bounds;
-						srb.size = new Vector3(colliderInitialDimensions.x, h, srb.size.z);
-						spriteRenderer.bounds = srb;
+						//var srb = spriteRenderer.bounds;
+						//srb.size = new Vector3(colliderInitialDimensions.x, h, rendererInitialDimensions.z);//srb.size.z);
+						//spriteRenderer.bounds = srb;
 					}
 					break;
 				}

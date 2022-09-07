@@ -217,7 +217,9 @@ namespace Assets.Scripts
 		private void OnAllGameScenesLoaded(AsyncOperation[] operations)
 		{
 			InitGameSceneAdditiveReferences();
-			FindObjectOfType<Goalpost>().GoalReached += MySceneManager_GoalReached;
+			var gp = FindObjectOfType<Goalpost>();
+			/*FindObjectOfType<Goalpost>()*/gp.GoalReached += MySceneManager_GoalReached;
+			gp.levelData.LevelLoaded.Invoke(gp.levelData.levelName);
 			AllSceneLoadsComplete -= OnAllGameScenesLoaded;
 		}
 

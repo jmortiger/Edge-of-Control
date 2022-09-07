@@ -167,6 +167,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4a5d6b1f94899094eb75728901d3e954, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  levelData: {fileID: 11400000, guid: 1b3061eedf3cc27448963b265f621d4f, type: 2}
   emptyClearTime: 26.68
   timeLimitMultiplier: 1.75
   timerText: {fileID: 0}
+  timerCharLength: 6

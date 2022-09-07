@@ -8,7 +8,8 @@ namespace Assets.Scripts
 	public class Goalpost : MonoBehaviour
 	{
 		public event EventHandler GoalReached;
-
+		[Expandable]
+		public LevelData levelData;
 		public float emptyClearTime = 26.68f;
 		public float timeLimitMultiplier = 1.75f;
 		public float PlayerTimeLimit { get => emptyClearTime * timeLimitMultiplier; }
@@ -57,14 +58,14 @@ namespace Assets.Scripts
 		void Update()
 		{
 			myTime += Time.deltaTime;
-			timerText.text = ((PlayerTimeLimit - /*Time.timeSinceLevelLoad*/myTime).ToString().Length < timerCharLength - 1) ?
-				PlayerTimeLimit - /*Time.timeSinceLevelLoad*/myTime + "s" :
-				("" + (PlayerTimeLimit - /*Time.timeSinceLevelLoad*/myTime)).Substring(0, timerCharLength - 1) + "s";
-			if (cleared && /*Time.timeSinceLevelLoad*/myTime <= PlayerTimeLimit)
+			timerText.text = ((levelData.PlayerTimeLimit - /*Time.timeSinceLevelLoad*/myTime).ToString().Length < timerCharLength - 1) ?
+				levelData.PlayerTimeLimit - /*Time.timeSinceLevelLoad*/myTime + "s" :
+				("" + (levelData.PlayerTimeLimit - /*Time.timeSinceLevelLoad*/myTime)).Substring(0, timerCharLength - 1) + "s";
+			if (cleared && /*Time.timeSinceLevelLoad*/myTime <= levelData.PlayerTimeLimit)
 				clearedInTime = true;
-			if (!clearedInTime && /*Time.timeSinceLevelLoad*/myTime > PlayerTimeLimit)
+			if (!clearedInTime && /*Time.timeSinceLevelLoad*/myTime > levelData.PlayerTimeLimit)
 			{
-				Debug.LogWarning($"Failed to clear level in expected {PlayerTimeLimit} seconds.");
+				Debug.LogWarning($"Failed to clear level in expected {levelData.PlayerTimeLimit} seconds.");
 				timerText.color = Color.red;
 			}
 			else if (clearedInTime)

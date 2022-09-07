@@ -171,7 +171,7 @@ namespace Assets.Scripts
 
 		public RollAnimationInfo rollInfo;
 
-		// TODO: Make aerial movement different from grounded movement.
+		// TOOD: Test aerial and grounded movement.
 		// TODO: Troubleshoot landing on enemies problem.
 		// TODO: Add combo timer
 		// TODO: Tweak wall run
@@ -192,7 +192,8 @@ namespace Assets.Scripts
 			//Debug.Log($"Presses: {jumpPresses}");
 			#endregion
 			#region Methods
-			Vector2 BasicMovement()
+			// TOOD: Factor in aerial and grounded constant move force.
+			Vector2 BasicMovement(Vector2 moveForce)
 			{
 				var moveVector = input.FindAction("Move").ReadValue<Vector2>();
 				moveVector.x = (moveVector.x == 0) ? 0 : ((moveVector.x > 0) ? 1 : -1);
@@ -204,7 +205,7 @@ namespace Assets.Scripts
 					transform.position += (Vector3)movementSettings.constantMovementDisplacement * Time.fixedDeltaTime;
 				}
 				else
-					rb.AddForce(Vector2.Scale(moveVector, movementSettings.moveForce));
+					rb.AddForce(Vector2.Scale(moveVector, moveForce/*movementSettings.moveForce*/));
 				return moveVector;
 			}
 			void EnterStumble()
@@ -307,6 +308,8 @@ namespace Assets.Scripts
 			}
 			#endregion
 			Vector2 moveVector = Vector2.positiveInfinity;
+			Vector2 moveForceGround = (movementSettings.isAerialAndGroundedMovementUnique) ? movementSettings.moveForceGrounded : movementSettings.moveForce;
+			Vector2 moveForceAerial = (movementSettings.isAerialAndGroundedMovementUnique) ? movementSettings.moveForceAerial : movementSettings.moveForce;
 			switch (movementState)
 			{
 				case var t when t.HasFlag(MovementState.Grounded):
@@ -314,7 +317,7 @@ namespace Assets.Scripts
 				{
 					if (movementState.HasFlag(MovementState.Rolling))
 						goto case MovementState.Rolling;
-					moveVector = moveVector.IsFinite() ? moveVector : BasicMovement();
+					moveVector = moveVector.IsFinite() ? moveVector : BasicMovement(moveForceGround);
 					aSource.clip = sfx_Running;
 					// TODO: Debug running sound & particle effect start and stop.
 					// TODO: Combine this collisionState.HasFlag(CollisionState.Ground) check with the next one.
@@ -395,7 +398,7 @@ namespace Assets.Scripts
 				case var t when t.HasFlag(MovementState.Jumping):
 				case MovementState.Jumping:
 				{
-					moveVector = moveVector.IsFinite() ? moveVector : BasicMovement();
+					moveVector = moveVector.IsFinite() ? moveVector : BasicMovement(moveForceAerial);
 					if (collisionState.HasFlag(CollisionState.EnemyCollider))
 					{
 						movementState ^= MovementState.Jumping;
@@ -421,7 +424,7 @@ namespace Assets.Scripts
 				case MovementState.Wallrunning:
 				{
 					// TODO: Add wall jump
-					moveVector = moveVector.IsFinite() ? moveVector : BasicMovement();
+					moveVector = moveVector.IsFinite() ? moveVector : BasicMovement(moveForceAerial);
 					if (!collisionState.HasFlag(CollisionState.BGWall) ||
 						hangTime <= 0 ||
 						(Velocity.x >= 0 && wallrunStartDir < 0) ||
@@ -442,7 +445,7 @@ namespace Assets.Scripts
 				case var t when t.HasFlag(MovementState.Falling):
 				case MovementState.Falling:
 				{
-					moveVector = moveVector.IsFinite() ? moveVector : BasicMovement();
+					moveVector = moveVector.IsFinite() ? moveVector : BasicMovement(moveForceAerial);
 					if (collisionState == CollisionState.None || collisionState == CollisionState.BGWall)
 					{
 						if (TryBoostJumping(moveVector))
@@ -498,7 +501,7 @@ namespace Assets.Scripts
 				case var t when t.HasFlag(MovementState.Invincible):
 				case MovementState.Invincible:
 				{
-					moveVector = moveVector.IsFinite() ? moveVector : BasicMovement();
+					moveVector = moveVector.IsFinite() ? moveVector : BasicMovement(moveForceAerial);
 					invincibleTimer -= Time.fixedDeltaTime;
 					if (invincibleTimer <= 0f || (rb.OverlapCollider(GlobalConstants.EnemyLayer/*enemyLayer*/, enemyCollidersOverlapped) <= 0 && collisionState.HasFlag(CollisionState.Ground)))
 					{

@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace Assets.ScriptableObjects
 {
-    [CreateAssetMenu(fileName = "sfxs_NewGroup", menuName = "ScriptableObjects/SFX_Group")]
+    [CreateAssetMenu(fileName = "sfxs_NewGroup", menuName = "Scriptable Object/SFX_Group")]
     public class SFX_Group : ScriptableObject
     {
         public AudioClip[] sfxs;

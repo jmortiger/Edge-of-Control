@@ -502,6 +502,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 514021173}
     - target: {fileID: 1492775944482201789, guid: 0b9cea0e484831f4f8a120bdea413127, type: 3}
+      propertyPath: coilInfo
+      value: 
+      objectReference: {fileID: 11400000, guid: 2e6e2d1f9136c4c4c9ad90c0f77eb24f, type: 2}
+    - target: {fileID: 1492775944482201789, guid: 0b9cea0e484831f4f8a120bdea413127, type: 3}
       propertyPath: messages
       value: 
       objectReference: {fileID: 731174594}

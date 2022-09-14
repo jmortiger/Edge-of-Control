@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Assets.Scripts.Utility
 {
-	[CreateAssetMenu(fileName = "dtm_HorizGradMode0", menuName = "ScriptableObjects/Dynamic Texture Mode/Horizontal Gradient Mode")]
+	[CreateAssetMenu(fileName = "dtm_HorizGradMode0", menuName = "Scriptable Object/Dynamic Texture Mode/Horizontal Gradient Mode")]
 	public class HorizontalGradientMode : DynamicTextureMode
 	{
 		public Gradient gradient;

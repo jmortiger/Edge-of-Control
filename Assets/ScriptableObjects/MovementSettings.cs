@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace Assets.ScriptableObjects
 {
-	[CreateAssetMenu(fileName = "mvt_PlayerMovement0", menuName = "ScriptableObjects/Movement Settings")]
+	[CreateAssetMenu(fileName = "mvt_PlayerMovement0", menuName = "Scriptable Object/Movement Settings")]
     public class MovementSettings : ScriptableObject
 	{
 		#region Constant Movement Fields

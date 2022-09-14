@@ -25,8 +25,7 @@
         <ui:IMGUIContainer name="camChart" />
     </ui:Foldout>
     <ui:Foldout text="Movement Settings" name="movementSettings" value="false" view-data-key="movementSettings">
-        <uie:ObjectField label="Movement Settings" allow-scene-objects="false" type="Assets.ScriptableObjects.MovementSettings, Assembly-CSharp" name="movementSettings" binding-path="movementSettings" />
-        <uie:PropertyField binding-path="movementSettings" label="Movement Settings" name="movementSettingsPropField" />
+        <uie:PropertyField binding-path="movementSettings" label="Movement Settings" name="movementSettings" />
         <ui:Foldout text="Non-Runner Settings" name="nonRunnerSettings" value="false" view-data-key="nonRunnerSettings" style="margin-left: 0;">
             <uie:Vector2Field label="Move Force:" binding-path="movementSettings.moveForce" x="10" y="1" name="moveForce" />
         </ui:Foldout>

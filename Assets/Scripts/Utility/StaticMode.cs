@@ -4,7 +4,7 @@ using UnityEngine.Events;
 
 namespace Assets.Scripts.Utility
 {
-	[CreateAssetMenu(fileName = "dtm_StaticMode0", menuName = "ScriptableObjects/Dynamic Texture Mode/Static Mode")]
+	[CreateAssetMenu(fileName = "dtm_StaticMode0", menuName = "Scriptable Object/Dynamic Texture Mode/Static Mode")]
 	public class StaticMode : DynamicTextureMode
 	{
 		[Tooltip("How many screen pixels make up 1 pixel of static.")]

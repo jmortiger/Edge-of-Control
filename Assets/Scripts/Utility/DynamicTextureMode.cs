@@ -4,7 +4,7 @@ using Random = UnityEngine.Random;
 
 namespace Assets.Scripts.Utility
 {
-	[CreateAssetMenu(fileName = "dtm_NewMode", menuName = "ScriptableObjects/Dynamic Texture Mode/Default")]
+	[CreateAssetMenu(fileName = "dtm_NewMode", menuName = "Scriptable Object/Dynamic Texture Mode/Default")]
 	public class DynamicTextureMode : ScriptableObject
 	{
 		public virtual void Initializer(Texture2D texture)

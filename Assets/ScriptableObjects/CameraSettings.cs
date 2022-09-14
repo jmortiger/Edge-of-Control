@@ -2,7 +2,7 @@
 
 namespace Assets.ScriptableObjects
 {
-	[CreateAssetMenu(fileName = "camSettings_New", menuName = "ScriptableObjects/Camera Settings")]
+	[CreateAssetMenu(fileName = "camSettings_New", menuName = "Scriptable Object/Camera Settings")]
 	public class CameraSettings : ScriptableObject
 	{
 		#region Camera Orthographic Size

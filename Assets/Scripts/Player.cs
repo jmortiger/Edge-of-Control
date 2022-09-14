@@ -44,6 +44,8 @@ namespace Assets.Scripts
 			particleSystem = GetComponent<ParticleSystem>();
 		}
 		#endregion
+		public AudioSource ASource { get => aSource; }
+		public ParticleSystem PSystem { get => particleSystem; }
 		#region Camera Stuff
 		public CinemachineVirtualCamera myCam;
 		public Camera cam;
@@ -108,7 +110,7 @@ namespace Assets.Scripts
 		#region Jump
 		bool jumpPressedLastFrame = false;
 		bool jumpPressedThisFrame = false;
-		bool JumpPressedOnThisFrame { get => (jumpPressedThisFrame && (!jumpPressedLastFrame)); }
+		public bool JumpPressedOnThisFrame { get => (jumpPressedThisFrame && (!jumpPressedLastFrame)); }
 		#endregion
 		#region Boost
 		bool boostPressedLastFrame = false;
@@ -124,30 +126,8 @@ namespace Assets.Scripts
 		#endregion
 		#region State
 		#region Flags
-		[Flags]
-		public enum MovementState
-		{
-			None		= 0x0000_0000,
-			Grounded	= 0x0000_0001,
-			Jumping		= 0x0000_0010,
-			Wallrunning	= 0x0000_0100,
-			Falling		= 0x0000_1000,
-			Stumbling	= 0x0001_0000,
-			Invincible	= 0x0010_0000,
-			Rolling		= 0x0100_0000,
-			Coiling		= 0x1000_0000,
-		}
 		[SerializeField]
 		MovementState movementState = MovementState.None;
-		[Flags]
-		public enum CollisionState
-		{
-			None = 0x0000_0000,
-			BGWall = 0x0000_0001,
-			Ground = 0x0000_0010,
-			EnemyCollider = 0x0000_0100,
-			EnemyTrigger = 0x0000_1000,
-		}
 		[SerializeField]
 		CollisionState collisionState = CollisionState.None;
 		#endregion
@@ -184,8 +164,8 @@ namespace Assets.Scripts
 		// TODO: Add 2-stage jump w/ 2nd stage having increased gravity (https://youtu.be/ep_9RtAbwog?t=154)
 		// TODO: Switch from physics-based movement to scripted movement.
 		// TODO: Expand compatible states (i.e. falling and coiling, jumping and invincible).
-		// TODO: Add toggleable state machine testing.
-		// TODO: Test coil jump.
+		// TODO: Add toggleable state machine testing.y
+		// TODO: Stop shotgun from firing during coil & roll states.
 		void FixedUpdate()
 		{
 			#region Debug Jump Checks
@@ -588,7 +568,7 @@ namespace Assets.Scripts
 				{
 					moveVector = moveVector.IsFinite() ? moveVector : BasicMovement(moveForceAerial);
 					invincibleTimer -= Time.fixedDeltaTime;
-					if (invincibleTimer <= 0f || (rb.OverlapCollider(GlobalConstants.EnemyLayer/*enemyLayer*/, enemyCollidersOverlapped) <= 0 && collisionState.HasFlag(CollisionState.Ground)))
+					if (invincibleTimer <= 0f || (rb.OverlapCollider(GlobalConstants.EnemyLayer, enemyCollidersOverlapped) <= 0 && collisionState.HasFlag(CollisionState.Ground)))
 					{
 						var c = spriteRenderer.color;
 						c.a = 1f;
@@ -829,7 +809,7 @@ namespace Assets.Scripts
 		void OnRenderObject() => DrawPositionIndicator();
 
 		#region Collision Updates
-		readonly List<Enemy> currentEnemyCollisions = new(3);
+		public readonly List<Enemy> currentEnemyCollisions = new(3);
 		#region OnCollision
 		// TODO: Resolve bad wall jumping (check collider.max against collided.min and vice versa)
 		// TODO: Modify to use switches

@@ -8,8 +8,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
-// TODO: Trim inspector stuff, handled in UIDocument.
-// TODO: Modify UIDocument to reflect new fields.
+// TODO: Fix inspector errors
 namespace Assets.Scripts
 {
 	#region RequireComponent
@@ -49,6 +48,7 @@ namespace Assets.Scripts
 		#region Camera Stuff
 		public CinemachineVirtualCamera myCam;
 		public Camera cam;
+		[Expandable]
 		public CameraSettings cameraSettings;
 		#endregion
 
@@ -80,6 +80,7 @@ namespace Assets.Scripts
 		// TODO: Refactor SFXs to use SFX Groups
 		public SFX_Group sfx_group_Jump;
 		public SFX_Group sfx_group_Hurt;
+		public SFX_Group sfx_group_Wallrun;
 		#endregion
 		#region Initializers
 		void Reset()
@@ -105,7 +106,6 @@ namespace Assets.Scripts
 		}
 		#endregion
 
-		public MovementSettings movementSettings;
 		#region Jump & Boost Checks and Update
 		#region Jump
 		bool jumpPressedLastFrame = false;
@@ -128,8 +128,10 @@ namespace Assets.Scripts
 		#region Flags
 		[SerializeField]
 		MovementState movementState = MovementState.None;
+		public MovementState MState { get => movementState; }
 		[SerializeField]
 		CollisionState collisionState = CollisionState.None;
+		public CollisionState CState { get => collisionState; }
 		#endregion
 		#region Roll State
 		bool rollRight = true;
@@ -151,8 +153,9 @@ namespace Assets.Scripts
 		public int combo = 0;
 		public uint boostMeter = 0;
 
-		public RollAnimationInfo rollInfo;
-		public RollAnimationInfo coilInfo;
+		[Expandable] public MovementSettings movementSettings;
+		[Expandable] public RollAnimationInfo rollInfo;
+		[Expandable] public RollAnimationInfo coilInfo;
 
 		// TOOD: Test aerial and grounded movement.
 		// TODO: Troubleshoot landing on enemies problem.
@@ -162,10 +165,9 @@ namespace Assets.Scripts
 		// TODO: Add boost run
 		// TODO: Add auditory feedback for fatal/damaging falls (like Mirror's Edge).
 		// TODO: Add 2-stage jump w/ 2nd stage having increased gravity (https://youtu.be/ep_9RtAbwog?t=154)
-		// TODO: Switch from physics-based movement to scripted movement.
+		// TODO: Switch from physics-based movement to scripted movement?
 		// TODO: Expand compatible states (i.e. falling and coiling, jumping and invincible).
-		// TODO: Add toggleable state machine testing.y
-		// TODO: Stop shotgun from firing during coil & roll states.
+		// TODO: Add toggleable state machine testing.
 		void FixedUpdate()
 		{
 			#region Debug Jump Checks
@@ -193,6 +195,160 @@ namespace Assets.Scripts
 					rb.AddForce(Vector2.Scale(moveVector, moveForce/*movementSettings.moveForce*/));
 				return moveVector;
 			}
+			#region Coil State
+			void EnterCoiling()
+			{
+				Debug.Assert(!movementState.HasFlag(MovementState.Coiling));
+				Debug.Assert(coilConsumable);
+				movementState |= MovementState.Coiling;
+				coilTimer = movementSettings.coilTimerLength;
+				coilConsumable = false;
+				AddUIMessage("Coil Jump");
+			}
+			void UpdateCoilState()
+			{
+				if (!movementState.HasFlag(MovementState.Jumping) &&
+					!movementState.HasFlag(MovementState.Falling))
+				{
+					ExitCoiling();
+					return;
+				}
+				//moveVector = moveVector.IsFinite() ? moveVector : BasicMovement();
+				coilTimer -= Time.fixedDeltaTime;
+				// TODO: Apply DRY to following 2 ifs
+				if (collisionState.HasFlag(CollisionState.EnemyCollider) && !movementState.HasFlag(MovementState.Invincible))
+				{
+					ExitCoiling();
+					EnterStumble();
+				}
+				else if (coilTimer <= 0f || (/*rb.OverlapCollider(GlobalConstants.EnemyLayer, enemyCollidersOverlapped) <= 0 && */collisionState.HasFlag(CollisionState.Ground)))
+					ExitCoiling();
+				else
+				{
+					coilTimer = (coilTimer < 0) ? 0 : coilTimer;
+
+					float GetCoilHeightAtTime(float coilTimer)
+					{
+						if (coilTimer <= coilInfo.entranceLengthRatio * movementSettings.coilTimerLength)
+							return Mathf.SmoothStep(colliderInitialDimensions.y, colliderInitialDimensions.y * coilInfo.minHeightRatio, coilTimer / (movementSettings.coilTimerLength / 2));
+						else if (coilTimer <= (coilInfo.entranceLengthRatio + coilInfo.properLengthRatio) * movementSettings.coilTimerLength)
+							return colliderInitialDimensions.y * coilInfo.minHeightRatio;
+						else
+							return Mathf.SmoothStep(colliderInitialDimensions.y * coilInfo.minHeightRatio, colliderInitialDimensions.y, (coilTimer / (movementSettings.coilTimerLength / 2)) - 1);
+					}
+					var h = GetCoilHeightAtTime(coilTimer);
+
+					MyCapsule.size = new(colliderInitialDimensions.x, h);
+
+					// TODO: Remove when using animations
+					//var srb = spriteRenderer.bounds;
+					//srb.size = new Vector3(colliderInitialDimensions.x, h, rendererInitialDimensions.z);//srb.size.z);
+					//spriteRenderer.bounds = srb;
+				}
+			}
+			void ExitCoiling()
+			{
+				MyCapsule.size = colliderInitialDimensions;
+
+				// TODO: Remove when using animations
+				//var srb = spriteRenderer.bounds;
+				//srb.size = rendererInitialDimensions;//new Vector3(colliderInitialDimensions.x, colliderInitialDimensions.y, srb.size.z);
+				//spriteRenderer.bounds = srb;
+
+				movementState ^= MovementState.Coiling;
+			}
+			#endregion
+			#region Invincible State
+			void EnterInvincible()
+			{
+				//Physics2D.IgnoreLayerCollision(LayerMask.NameToLayer("Default"), LayerMask.NameToLayer("Enemy"), false);
+				invincibleTimer = movementSettings.invincibleTimerLength;
+				movementState |= MovementState.Invincible;
+			}
+			void UpdateInvincible()
+			{
+				//moveVector = moveVector.IsFinite() ? moveVector : BasicMovement(moveForceAerial);
+				invincibleTimer -= Time.fixedDeltaTime;
+				if (invincibleTimer <= 0f ||
+						(rb.OverlapCollider(GlobalConstants.EnemyLayer, enemyCollidersOverlapped) <= 0 &&
+						collisionState.HasFlag(CollisionState.Ground)))
+					ExitInvincible();
+			}
+			void ExitInvincible()
+			{
+				var c = spriteRenderer.color;
+				c.a = 1f;
+				spriteRenderer.color = c;
+				Physics2D.IgnoreLayerCollision(LayerMask.NameToLayer("Default"), LayerMask.NameToLayer("Enemy"), false);
+				movementState ^= MovementState.Invincible;
+			}
+			#endregion
+			#region Rolling State
+			void EnterRolling()
+			{
+				movementState |= MovementState.Rolling;
+				particleSystem.Play(true);
+				rollTimer = movementSettings.rollTimerLength;
+				rollRight = /*Velocity*/CachedVelocity.x >= 0;
+				rollInitialVx = Mathf.Abs(CachedVelocity.x);
+				AddUIMessage("Successful PK Roll");
+			}
+			void UpdateRolling()
+			{
+				//transform.position += new Vector3(movementSettings.rollSpeed * Time.fixedDeltaTime * (rollRight ? 1 : -1), 0f, 0f);
+				rollTimer -= Time.fixedDeltaTime;
+				// TODO: Apply DRY to following 2 ifs
+				if (collisionState.HasFlag(CollisionState.EnemyCollider))
+				{
+					ExitRolling();
+					EnterStumble();
+					return;
+				}
+				else if (rollTimer <= 0f/* || (rb.OverlapCollider(enemyLayer, enemyCollidersOverlapped) <= 0 && collisionState.HasFlag(CollisionState.Ground))*/)
+				{
+					rb.velocity = new(movementSettings.rollExitSpeed * (rollRight ? 1 : -1), Velocity.y);
+
+					ExitRolling();
+					//movementState |= MovementState.Grounded;
+					return;
+				}
+				else
+				{
+					rollTimer = (rollTimer < 0) ? 0 : rollTimer;
+
+					rb.velocity = new(Mathf.Lerp(movementSettings.rollExitSpeed, rollInitialVx, rollTimer / movementSettings.rollTimerLength) * (rollRight ? 1 : -1), Velocity.y);
+
+					float GetRollHeightAtTime(float rollTimer)
+					{
+						if (rollTimer <= rollInfo.entranceLengthRatio * movementSettings.rollTimerLength)
+							return Mathf.SmoothStep(colliderInitialDimensions.y, colliderInitialDimensions.y * rollInfo.minHeightRatio, rollTimer / (movementSettings.rollTimerLength / 2));
+						else if (rollTimer <= (rollInfo.entranceLengthRatio + rollInfo.properLengthRatio) * movementSettings.rollTimerLength)
+							return colliderInitialDimensions.y * rollInfo.minHeightRatio;
+						else
+							return Mathf.SmoothStep(colliderInitialDimensions.y * rollInfo.minHeightRatio, colliderInitialDimensions.y, (rollTimer / (movementSettings.rollTimerLength / 2)) - 1);
+					}
+					var h = GetRollHeightAtTime(rollTimer);
+
+					MyCapsule.size = new(colliderInitialDimensions.x, h);
+
+					// TODO: Remove when using animations
+					//var srb = spriteRenderer.bounds;
+					//srb.size = new Vector3(colliderInitialDimensions.x, h, rendererInitialDimensions.z);//srb.size.z);
+					//spriteRenderer.bounds = srb;
+				}
+			}
+			void ExitRolling()
+			{
+				MyCapsule.size = colliderInitialDimensions;
+
+				// TODO: Remove when using animations
+				//var srb = spriteRenderer.bounds;
+				//srb.size = rendererInitialDimensions;//new Vector3(colliderInitialDimensions.x, colliderInitialDimensions.y, srb.size.z);
+				//spriteRenderer.bounds = srb;
+
+				movementState ^= MovementState.Rolling;
+			}
+			#endregion
 			#region Enter State
 			void EnterStumble()
 			{
@@ -238,22 +394,7 @@ namespace Assets.Scripts
 				startLifetime.constant = origStartLifetimeConstant;
 				m.startLifetime = startLifetime;
 			}
-			void EnterGrounded()
-			{
-				movementState |= MovementState.Grounded;
-				boostConsumable = true;
-				coilConsumable = true;
-				particleSystem.Play(true);
-			}
-			void EnterRolling()
-			{
-				movementState |= MovementState.Rolling;
-				particleSystem.Play(true);
-				rollTimer = movementSettings.rollTimerLength;
-				rollRight = /*Velocity*/CachedVelocity.x >= 0;
-				rollInitialVx = Mathf.Abs(CachedVelocity.x);
-				AddUIMessage("Successful PK Roll");
-			}
+			#endregion
 			void EnterWallrunning()
 			{
 				var vel = Velocity;
@@ -264,71 +405,47 @@ namespace Assets.Scripts
 				rb.AddForce(new(0, hangTime));
 				boostConsumable = true;
 				coilConsumable = true;
+				particleSystem.Play(true);
+				// TODO: Add wallrun sfx;
+				//aSource.PlayOneShot(sfx_group_Wallrun.GetRandomClip());
 				movementState |= MovementState.Wallrunning;
 			}
-			#endregion
-			#region Coil State
-			void EnterCoiling()
+			void ExitWallrunning()
 			{
-				movementState |= MovementState.Coiling;
-				coilTimer = movementSettings.coilTimerLength;
-				coilConsumable = false;
-				AddUIMessage("Coil Jump");
+				// TODO: Add wallrun sfx;
+				particleSystem.Stop(/*false, ParticleSystemStopBehavior.StopEmitting*/);
+				hangTime = 0;
+				wallrunStartDir = 0;
+				movementState ^= MovementState.Wallrunning;
 			}
-			void UpdateCoilState()
+			void EnterGrounded()
 			{
-				//moveVector = moveVector.IsFinite() ? moveVector : BasicMovement();
-				coilTimer -= Time.fixedDeltaTime;
-				// TODO: Apply DRY to following 2 ifs
-				if (collisionState.HasFlag(CollisionState.EnemyCollider))
-				{
-					ExitCoiling();
-					EnterStumble();
-				}
-				else if (coilTimer <= 0f || (/*rb.OverlapCollider(GlobalConstants.EnemyLayer, enemyCollidersOverlapped) <= 0 && */collisionState.HasFlag(CollisionState.Ground)))
-					ExitCoiling();
-				else
-				{
-					coilTimer = (coilTimer < 0) ? 0 : coilTimer;
-
-					float GetCoilHeightAtTime(float coilTimer)
-					{
-						if (coilTimer <= coilInfo.entranceLengthRatio * movementSettings.coilTimerLength)
-							return Mathf.SmoothStep(colliderInitialDimensions.y, colliderInitialDimensions.y * coilInfo.minHeightRatio, coilTimer / (movementSettings.coilTimerLength / 2));
-						else if (coilTimer <= (coilInfo.entranceLengthRatio + coilInfo.properLengthRatio) * movementSettings.coilTimerLength)
-							return colliderInitialDimensions.y * coilInfo.minHeightRatio;
-						else
-							return Mathf.SmoothStep(colliderInitialDimensions.y * coilInfo.minHeightRatio, colliderInitialDimensions.y, (coilTimer / (movementSettings.coilTimerLength / 2)) - 1);
-					}
-					var h = GetCoilHeightAtTime(coilTimer);
-
-					MyCapsule.size = new(colliderInitialDimensions.x, h);
-
-					// TODO: Remove when using animations
-					//var srb = spriteRenderer.bounds;
-					//srb.size = new Vector3(colliderInitialDimensions.x, h, rendererInitialDimensions.z);//srb.size.z);
-					//spriteRenderer.bounds = srb;
-				}
+				movementState |= MovementState.Grounded;
+				boostConsumable = true;
+				coilConsumable = true;
+				particleSystem.Play(true);
 			}
-			void ExitCoiling()
+			void ExitGrounded()
 			{
-				MyCapsule.size = colliderInitialDimensions;
-
-				// TODO: Remove when using animations
-				//var srb = spriteRenderer.bounds;
-				//srb.size = rendererInitialDimensions;//new Vector3(colliderInitialDimensions.x, colliderInitialDimensions.y, srb.size.z);
-				//spriteRenderer.bounds = srb;
-
-				movementState ^= MovementState.Coiling;
+				aSource.Stop();
+				particleSystem.Stop(/*false, ParticleSystemStopBehavior.StopEmitting*/);
+				movementState ^= MovementState.Grounded;
 			}
-			#endregion
+			void EnterJumping(Vector2 moveVector)
+			{
+				moveVector.y = 1;
+				var fApplied = Vector2.Scale(moveVector, movementSettings.jumpForce);
+				rb.AddForce(fApplied, ForceMode2D.Impulse);
+				particleSystem.Emit(30);
+				aSource.PlayOneShot(sfx_group_Jump.GetRandomClip());
+				movementState |= MovementState.Jumping;
+			}
 			bool TryBoostJumping(Vector2 moveVector)
 			{
 				if (JumpPressedOnThisFrame && input.IsPressed("Boost") && boostConsumable && boostMeter >= movementSettings.boostJumpCost)
 				{
 					//var moveVector = input.FindAction("Move").ReadValue<Vector2>();
 					//moveVector.x = (moveVector.x == 0) ? 0 : ((moveVector.x > 0) ? 1 : -1);
-					moveVector.y = 1;
 					// If falling, zero out vertical velocity so the jump isn't fighting the downward momentum.
 					if (Velocity.y < 0)
 					{
@@ -336,24 +453,27 @@ namespace Assets.Scripts
 						vel.y = 0;
 						rb.velocity = vel;
 					}
-					var fApplied = Vector2.Scale(moveVector, movementSettings.jumpForce);
-					rb.AddForce(fApplied, ForceMode2D.Impulse);
-					aSource.Stop();
+					//aSource.Stop();// Should I do this?
 					//particleSystem.Play();// Should I do this?
-					particleSystem.Emit(30);
-					particleSystem.Stop();
-					aSource.PlayOneShot(sfx_group_Jump.GetRandomClip());
+
+					//moveVector.y = 1;
+					//var fApplied = Vector2.Scale(moveVector, movementSettings.jumpForce);
+					//rb.AddForce(fApplied, ForceMode2D.Impulse);
+					//particleSystem.Emit(30);
+					//aSource.PlayOneShot(sfx_group_Jump.GetRandomClip());
+					//movementState |= MovementState.Jumping;
+					EnterJumping(moveVector);
 					UpdateBoostMeter(-movementSettings.boostJumpCost);
 					boostConsumable = false;
-					movementState |= MovementState.Jumping;
 					return true;
 				}
 				return false;
 			}
 			#endregion
 			Vector2 moveVector = Vector2.positiveInfinity;
-			Vector2 moveForceGround = (movementSettings.isAerialAndGroundedMovementUnique) ? movementSettings.moveForceGround : movementSettings.moveForce;
-			Vector2 moveForceAerial = (movementSettings.isAerialAndGroundedMovementUnique) ? movementSettings.moveForceAerial : movementSettings.moveForce;
+			Vector2 moveForceGround  = (movementSettings.isAerialAndGroundedMovementUnique) ? movementSettings.moveForceGround  : movementSettings.moveForce;
+			Vector2 moveForceAerial  = (movementSettings.isAerialAndGroundedMovementUnique) ? movementSettings.moveForceAerial  : movementSettings.moveForce;
+			Vector2 moveForceWallrun = (movementSettings.isAerialAndGroundedMovementUnique) ? movementSettings.moveForceWallrun : movementSettings.moveForce;
 			switch (movementState)
 			{
 				case var t when t.HasFlag(MovementState.Grounded):
@@ -384,59 +504,45 @@ namespace Assets.Scripts
 					}
 					//Debug.Log($"isPlaying:{aSource.isPlaying}");
 					if (!collisionState.HasFlag(CollisionState.Ground) && 
-						!collisionState.HasFlag(CollisionState.EnemyCollider) && 
-						!collisionState.HasFlag(CollisionState.EnemyTrigger))
+						!collisionState.HasFlag(CollisionState.EnemyCollider))// work on killing enemy collider as valid grounded state.
 					{
-						aSource.Stop();
-						particleSystem.Stop();
+						ExitGrounded();
 						movementState |= MovementState.Falling;
-						movementState ^= MovementState.Grounded;
 					}
 					else if (collisionState.HasFlag(CollisionState.EnemyCollider) && !movementState.HasFlag(MovementState.Invincible))
 					{
-						aSource.Stop();
-						particleSystem.Stop();
-						movementState ^= MovementState.Grounded;
+						ExitGrounded();
 						EnterStumble();
 					}
 					else if (JumpPressedOnThisFrame)
 					{
-						//var moveVector = input.FindAction("Move").ReadValue<Vector2>();
-						//moveVector.x = (moveVector.x == 0) ? 0 : ((moveVector.x > 0) ? 1 : -1);
-						moveVector.y = 1;
-						// TODO: If fall speed too high, force to roll?
-						if (collisionState.HasFlag(CollisionState.EnemyTrigger) && Velocity.y <= 0)
-						{
-							var vel = Velocity;
-							vel.y *= -1;
-							rb.velocity = vel;
-							rb.velocity *= movementSettings.conservedVelocity;
-
-							// This process seems to automatically clear currentEnemyCollisions due
-							// to the deactivation of enemy colliders further down the chain. If
-							// the following assert fails, check there.
-							int lengthBefore = currentEnemyCollisions.Count;
-							var temp = currentEnemyCollisions.ToArray();
-							for (int i = 0; i < temp.Length; i++)
-								temp[i]?.OnPlayerStomp();
-							Debug.Assert(lengthBefore > currentEnemyCollisions.Count);
-							UpdateScore((lengthBefore - currentEnemyCollisions.Count) * 200);
-
-							AddUIMessage("Enemy Bounce");
-							combo++;
-							UpdateBoostMeter(20);
-						}
-						var fApplied = Vector2.Scale(moveVector, movementSettings.jumpForce);
-						rb.AddForce(fApplied, ForceMode2D.Impulse);
-						aSource.Stop();
-						particleSystem.Emit(30);
-						particleSystem.Stop();
-						aSource.PlayOneShot(/*sfx_Jump*/sfx_group_Jump.GetRandomClip());
-						movementState |= MovementState.Jumping;
-						movementState ^= MovementState.Grounded;
+						ExitGrounded();
+						EnterJumping(moveVector);
 					}
-					if (movementState.HasFlag(MovementState.Invincible))
-						goto case MovementState.Invincible;
+					break;
+				}
+				case var t when t.HasFlag(MovementState.Wallrunning):
+				case MovementState.Wallrunning:
+				{
+					// TODO: Add wallrun sfx;
+					// TODO: Add wall jump
+					moveVector = moveVector.IsFinite() ? moveVector : BasicMovement(moveForceWallrun);
+					if (!collisionState.HasFlag(CollisionState.BGWall) ||
+						hangTime <= 0 ||
+						(Velocity.x >= 0 && wallrunStartDir < 0) ||
+						(Velocity.x <= 0 && wallrunStartDir > 0))
+						ExitWallrunning();
+					else
+					{
+						// Counter gravity
+						rb.AddForce(Physics2D.gravity * -1);
+						rb.AddForce(new(0, hangTime));
+						hangTime -= Time.fixedDeltaTime;
+					}
+					if (movementState.HasFlag(MovementState.Jumping))
+						goto case MovementState.Jumping;
+					else if (movementState.HasFlag(MovementState.Falling))
+						goto case MovementState.Falling;
 					break;
 				}
 				case var t when t.HasFlag(MovementState.Jumping):
@@ -450,74 +556,62 @@ namespace Assets.Scripts
 					}
 					else if (Velocity.y <= 0)
 					{
-						movementState |= MovementState.Falling;
 						movementState ^= MovementState.Jumping;
-						if (!TryBoostJumping(moveVector) && input.FindAction(GlobalConstants.GetNames(InputActionNames.DownAction)).IsPressed() && coilConsumable)
-							EnterCoiling();
+						movementState |= MovementState.Falling;
 					}
 					else if (collisionState.HasFlag(CollisionState.BGWall) && JumpPressedOnThisFrame && Velocity.x != 0)
-					{
-						movementState ^= MovementState.Jumping;
 						EnterWallrunning();
-					}
-					else if (!TryBoostJumping(moveVector) && input.FindAction(GlobalConstants.GetNames(InputActionNames.DownAction)).IsPressed() && coilConsumable)
+					if  ((movementState.HasFlag(MovementState.Jumping) || movementState.HasFlag(MovementState.Falling)) && // If we're in the air...
+						!(movementState.HasFlag(MovementState.Wallrunning) || movementState.HasFlag(MovementState.Stumbling)) && // ... and not wallrunning nor stumbling...
+						!TryBoostJumping(moveVector) && // ... then try boost jumping. If that fails...
+						input.IsPressed(InputNames.DownAction.GetName()) && // ... and the coil button is pressed...
+						coilConsumable) // ... and we can coil...
 						EnterCoiling();
 					if (movementState.HasFlag(MovementState.Coiling))
-					{
-						if (!movementState.HasFlag(MovementState.Jumping) && !movementState.HasFlag(MovementState.Falling))
-							ExitCoiling();
-						else
-						{
-							//goto case MovementState.Coiling;
-							UpdateCoilState();
-						}
-					}
-					if (movementState.HasFlag(MovementState.Invincible))
-						goto case MovementState.Invincible;
-					break;
-				}
-				case var t when t.HasFlag(MovementState.Wallrunning):
-				case MovementState.Wallrunning:
-				{
-					// TODO: Add wall jump
-					moveVector = moveVector.IsFinite() ? moveVector : BasicMovement(moveForceAerial);
-					if (!collisionState.HasFlag(CollisionState.BGWall) ||
-						hangTime <= 0 ||
-						(Velocity.x >= 0 && wallrunStartDir < 0) ||
-						(Velocity.x <= 0 && wallrunStartDir > 0))
-					{
-						hangTime = 0;
-						wallrunStartDir = 0;
-						movementState |= MovementState.Falling;
-						movementState ^= MovementState.Wallrunning;
-					}
-					rb.AddForce(Physics2D.gravity * -1);
-					rb.AddForce(new(0, hangTime));
-					hangTime -= Time.fixedDeltaTime;
-					if (movementState.HasFlag(MovementState.Invincible))
-						goto case MovementState.Invincible;
+						UpdateCoilState();
 					break;
 				}
 				case var t when t.HasFlag(MovementState.Falling):
 				case MovementState.Falling:
 				{
+					Debug.Assert(Velocity.y <= 0 || CachedVelocity.y <= 0);
 					moveVector = moveVector.IsFinite() ? moveVector : BasicMovement(moveForceAerial);
 					if (collisionState == CollisionState.None || collisionState == CollisionState.BGWall)
 					{
 						if (TryBoostJumping(moveVector))
 							movementState ^= MovementState.Falling;
-						else if (input.FindAction(GlobalConstants.GetNames(InputActionNames.DownAction)).IsPressed() && coilConsumable)
+						else if (input.IsPressed(InputNames.DownAction.GetName()) && coilConsumable)
 							EnterCoiling();
 					}
-					else if (collisionState.HasFlag(CollisionState.EnemyTrigger))
+					// TODO: If fall speed too high, force to roll?
+					// Pulled from grounded state.
+					else if (JumpPressedOnThisFrame && collisionState.HasFlag(CollisionState.EnemyTrigger)/* && Velocity.y <= 0*/)// <- Vel check should be redundant
 					{
+						var vel = Velocity;
+						vel.y *= -1;
+						rb.velocity = vel;
+						rb.velocity *= movementSettings.conservedVelocity;
+
+						// This process seems to automatically clear currentEnemyCollisions due
+						// to the deactivation of enemy colliders further down the chain. If
+						// the following assert fails, check there.
+						int lengthBefore = currentEnemyCollisions.Count;
+						var temp = currentEnemyCollisions.ToArray();
+						for (int i = 0; i < temp.Length; i++)
+							temp[i]?.OnPlayerStomp();
+						Debug.Assert(lengthBefore > currentEnemyCollisions.Count);
+						UpdateScore((lengthBefore - currentEnemyCollisions.Count) * 200);
+
+						AddUIMessage("Enemy Bounce");
+						combo++;
+						UpdateBoostMeter(20);
+
 						movementState ^= MovementState.Falling;
-						EnterGrounded();
-						goto case MovementState.Grounded;
+						EnterJumping(moveVector);
 					}
 					else if (((collisionState.HasFlag(CollisionState.Ground) && CachedVelocity.y < movementSettings.maxSafeFallSpeed) || collisionState.HasFlag(CollisionState.EnemyCollider)) && !movementState.HasFlag(MovementState.Invincible))
 					{
-						if (input.IsPressed("DownAction"))
+						if (input.IsPressed(InputNames.DownAction.GetName()))
 						{
 							movementState ^= MovementState.Falling;
 							EnterGrounded();
@@ -535,17 +629,7 @@ namespace Assets.Scripts
 						EnterGrounded();
 					}
 					if (movementState.HasFlag(MovementState.Coiling))
-					{
-						if (!movementState.HasFlag(MovementState.Jumping) && !movementState.HasFlag(MovementState.Falling))
-							ExitCoiling();
-						else
-						{
-							//goto case MovementState.Coiling;
-							UpdateCoilState();
-						}
-					}
-					if (movementState.HasFlag(MovementState.Invincible))
-						goto case MovementState.Invincible;
+						UpdateCoilState();
 					break;
 				}
 				case var t when t.HasFlag(MovementState.Stumbling):
@@ -555,9 +639,7 @@ namespace Assets.Scripts
 					if (stumbleTimer <= 0f)
 					{
 						AddUIMessage("Back up!");
-						//Physics2D.IgnoreLayerCollision(LayerMask.NameToLayer("Default"), LayerMask.NameToLayer("Enemy"), false);
-						invincibleTimer = movementSettings.invincibleTimerLength;
-						movementState |= MovementState.Invincible;
+						EnterInvincible();
 						EnterGrounded();
 						movementState ^= MovementState.Stumbling;
 					}
@@ -566,77 +648,19 @@ namespace Assets.Scripts
 				case var t when t.HasFlag(MovementState.Invincible):
 				case MovementState.Invincible:
 				{
-					moveVector = moveVector.IsFinite() ? moveVector : BasicMovement(moveForceAerial);
-					invincibleTimer -= Time.fixedDeltaTime;
-					if (invincibleTimer <= 0f || (rb.OverlapCollider(GlobalConstants.EnemyLayer, enemyCollidersOverlapped) <= 0 && collisionState.HasFlag(CollisionState.Ground)))
-					{
-						var c = spriteRenderer.color;
-						c.a = 1f;
-						spriteRenderer.color = c;
-						Physics2D.IgnoreLayerCollision(LayerMask.NameToLayer("Default"), LayerMask.NameToLayer("Enemy"), false);
-						movementState ^= MovementState.Invincible;
-					}
+					//moveVector = moveVector.IsFinite() ? moveVector : BasicMovement(moveForceAerial);
+					//invincibleTimer -= Time.fixedDeltaTime;
+					//if (invincibleTimer <= 0f ||
+					//		(rb.OverlapCollider(GlobalConstants.EnemyLayer, enemyCollidersOverlapped) <= 0 && 
+					//		collisionState.HasFlag(CollisionState.Ground)))
+					//	ExitInvincible();
+					UpdateInvincible();
 					break;
 				}
 				case var t when t.HasFlag(MovementState.Rolling):
 				case MovementState.Rolling:
 				{
-					//moveVector = moveVector.IsFinite() ? moveVector : BasicMovement();
-					//transform.position += new Vector3(movementSettings.rollSpeed * Time.fixedDeltaTime * (rollRight ? 1 : -1), 0f, 0f);
-					rollTimer -= Time.fixedDeltaTime;
-					// TODO: Apply DRY to following 2 ifs
-					if (collisionState.HasFlag(CollisionState.EnemyCollider))
-					{
-						MyCapsule.size = colliderInitialDimensions;
-
-						// TODO: Remove when using animations
-						//var srb = spriteRenderer.bounds;
-						//srb.size = rendererInitialDimensions;//new Vector3(colliderInitialDimensions.x, colliderInitialDimensions.y, srb.size.z);
-						//spriteRenderer.bounds = srb;
-
-						movementState ^= MovementState.Rolling;
-						EnterStumble();
-						break;
-					}
-					else if (rollTimer <= 0f/* || (rb.OverlapCollider(enemyLayer, enemyCollidersOverlapped) <= 0 && collisionState.HasFlag(CollisionState.Ground))*/)
-					{
-						rb.velocity = new(movementSettings.rollExitSpeed * (rollRight ? 1 : -1), Velocity.y);
-
-						MyCapsule.size = colliderInitialDimensions;
-						
-						// TODO: Remove when using animations
-						//var srb = spriteRenderer.bounds;
-						//srb.size = rendererInitialDimensions;//new Vector3(colliderInitialDimensions.x, colliderInitialDimensions.y, srb.size.z);
-						//spriteRenderer.bounds = srb;
-						
-						//movementState |= MovementState.Grounded;
-						movementState ^= MovementState.Rolling;
-						break;
-					}
-					else
-					{
-						rollTimer = (rollTimer < 0) ? 0 : rollTimer;
-
-						rb.velocity = new(Mathf.Lerp(movementSettings.rollExitSpeed, rollInitialVx, rollTimer / movementSettings.rollTimerLength) * (rollRight ? 1 : -1), Velocity.y);
-
-						float GetRollHeightAtTime(float rollTimer)
-						{
-							if (rollTimer <= rollInfo.entranceLengthRatio * movementSettings.rollTimerLength)
-								return Mathf.SmoothStep(colliderInitialDimensions.y, colliderInitialDimensions.y * rollInfo.minHeightRatio, rollTimer / (movementSettings.rollTimerLength / 2));
-							else if (rollTimer <= (rollInfo.entranceLengthRatio + rollInfo.properLengthRatio) * movementSettings.rollTimerLength)
-								return colliderInitialDimensions.y * rollInfo.minHeightRatio;
-							else
-								return Mathf.SmoothStep(colliderInitialDimensions.y * rollInfo.minHeightRatio, colliderInitialDimensions.y, (rollTimer / (movementSettings.rollTimerLength / 2)) - 1);
-						}
-						var h = GetRollHeightAtTime(rollTimer);
-						
-						MyCapsule.size = new(colliderInitialDimensions.x, h);
-
-						// TODO: Remove when using animations
-						//var srb = spriteRenderer.bounds;
-						//srb.size = new Vector3(colliderInitialDimensions.x, h, rendererInitialDimensions.z);//srb.size.z);
-						//spriteRenderer.bounds = srb;
-					}
+					UpdateRolling();
 					break;
 				}
 				case var t when t.HasFlag(MovementState.Coiling):
@@ -653,6 +677,8 @@ namespace Assets.Scripts
 					goto case MovementState.Grounded;
 				}
 			}
+			if (movementState.HasFlag(MovementState.Invincible))
+				UpdateInvincible();
 
 			#region After movement is handled
 			// Change Cam Size
@@ -662,6 +688,9 @@ namespace Assets.Scripts
 
 			// Update speed display after application of forces.
 			UpdateSpeedText();
+
+			// Update messages for opacity.
+			UpdateUIMessages(Time.fixedDeltaTime);
 
 			// Reset jump/boost inputs
 			jumpPressedLastFrame = jumpPressedThisFrame;
@@ -676,7 +705,6 @@ namespace Assets.Scripts
 		#region UI Stuff
 		#region Fields
 		public TMP_Text speedText;
-		public TMP_Text messages;
 		public TMP_Text scoreText;
 		public DamageIndicator damageIndicator;
 		public Slider boostMeterUI;
@@ -707,8 +735,81 @@ namespace Assets.Scripts
 				speedText.text += $"Y: {Velocity.y} u/s";
 		}
 
-		// TODO: Fade out messages over time.
+		// TODO: Refactor to separate object?
+		#region Messages
+		public TMP_Text messages;
+		private string[] currentMessages = new string[6] { "", "", "", "", "", "" };
+		private float[] currentMessageTimes = new float[6] { 5, 5, 5, 5, 5, 5 };
+		private float messageTimerLength = 5f;
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="message"></param>
+		/// <remarks>Works with <see cref="UpdateUIMessages(float)"/> to fade messages over time; requires <see cref="messages"/>, 
+		/// <see cref="currentMessages"/>, <see cref="currentMessageTimes"/>, and <see cref="messageTimerLength"/> to work.</remarks>
 		public void AddUIMessage(string message)
+		{
+			if (currentMessages.Length < 6)
+			{
+				var t = currentMessages;
+				currentMessages = new string[6] { "", "", "", "", "", "" };
+				t.CopyTo(currentMessages, 1);
+			}
+			else
+			{
+				//var t = currentMessages;
+				//currentMessages = new string[] { "", t[0], t[1], t[2], t[3], t[4] };
+				currentMessages.SlideElementsDown("");
+			}
+			currentMessageTimes.SlideElementsDown(messageTimerLength);
+			currentMessages[Array.IndexOf(currentMessages, "")] = message;
+		}
+		// TODO: Fire with coroutine to minimize ui updates and clear coroutine on player disabled.
+		private void UpdateUIMessages(float deltaTime = -1)
+		{
+			if (deltaTime < 0)
+				deltaTime = Time.fixedDeltaTime;
+			for (int i = 0; i < currentMessageTimes.Length; i++)
+			{
+				currentMessageTimes[i] -= deltaTime;
+				if (currentMessageTimes[i] < 0)
+					currentMessageTimes[i] = 0;
+			}
+
+			if (currentMessages.Length < 6)
+			{
+				var t = currentMessages;
+				currentMessages = new string[6] { "", "", "", "", "", "" };
+				t.CopyTo(currentMessages, 0);
+			}
+			else if (currentMessages.Length != 6)
+			{
+				Debug.LogWarning("More than 6 UI Messages, remainder will be discarded.");
+				var t = currentMessages;
+				currentMessages = new string[] { t[0], t[1], t[2], t[3], t[4], t[5] };
+			}
+
+			// Opacity
+			var opacities = new int[currentMessages.Length];
+			for (int i = 0; i < opacities.Length; i++)
+			{
+				var percentage = currentMessageTimes[i] / messageTimerLength;
+				opacities[i] = Mathf.FloorToInt(percentage * 255);
+			}
+
+			// Set
+			messages.text = "";
+			for (int i = currentMessages.Length - 1; i >= 0; i--)
+				if (currentMessages[i] != "")
+					messages.text = $"<alpha=#{opacities[i]:X2}>{currentMessages[i]}\r\n{messages.text}";
+		}
+		#region Deprecated
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="message"></param>
+		/// <remarks>Standalone; doesn't fade messages over time, only needs <see cref="messages"/> to work.</remarks>
+		public void Deprecated_AddUIMessage(string message)
 		{
 			var messagesStored = messages.GetParsedText().Split(
 				new string[] { "\r\n", "\r", "\n" },
@@ -731,7 +832,9 @@ namespace Assets.Scripts
 				if (messagesStored[i] != "")
 					messages.text = $"<style=\"m{i + 1}\">{messagesStored[i]}</style>\r\n{messages.text}";
 		}
-		
+		#endregion
+		#endregion
+
 		// TODO: boostMeter and score uint weirdness check
 		#region Boost Meter
 		public void UpdateBoostMeter(int delta)

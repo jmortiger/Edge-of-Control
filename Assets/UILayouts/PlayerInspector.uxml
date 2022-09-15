@@ -13,48 +13,18 @@
     <ui:Foldout text="Camera Orthographic Size" name="camSettings" tooltip="Scales orthograpic size as speed increases." value="false" view-data-key="camSettings">
         <uie:ObjectField label="My Cam:" binding-path="myCam" type="Cinemachine.CinemachineVirtualCamera, Cinemachine" name="myCam" />
         <uie:ObjectField label="Unity Cam:" binding-path="cam" type="UnityEngine.Camera, UnityEngine.CoreModule" name="cam" />
-        <uie:ObjectField label="Camera Settings" allow-scene-objects="false" type="Assets.ScriptableObjects.CameraSettings, Assembly-CSharp" name="cameraSettings" binding-path="cameraSettings" />
-        <uie:PropertyField binding-path="cameraSettings" focusable="true" label="Camera Settings" />
+        <uie:PropertyField binding-path="cameraSettings" focusable="true" label="Camera Settings" name="cameraSettings" view-data-key="cameraSettings" />
         <ui:IMGUIContainer name="cameraSettingsIMGUI" />
-        <ui:Slider picking-mode="Ignore" label="defaultOrthographicSize:" value="5" high-value="50" tooltip="i" low-value="1" binding-path="cameraSettings.defaultOrthographicSize" show-input-field="true" name="defaultOrthographicSize" />
-        <ui:Toggle label="Is Orthographic Size Function Active?" value="false" binding-path="cameraSettings.isOrthographicSizeFunctionActive" name="isOrthographicSizeFunctionActive" />
-        <ui:Label text="OrthoSize = i - 1 + b^(deltaD * s)" display-tooltip-when-elided="true" />
-        <ui:Slider picking-mode="Ignore" label="Initial Orthographic Size:" value="5" high-value="50" tooltip="i" low-value="1" binding-path="cameraSettings.initialCameraOrthographicSize" show-input-field="true" name="initialCameraOrthographicSize" />
-        <ui:Slider picking-mode="Ignore" label="Scale Distance from Ground:" value="1" high-value="1" show-input-field="true" binding-path="cameraSettings.scaleDistance" tooltip="s" name="scaleDistance" />
-        <ui:Slider picking-mode="Ignore" label="Base for Orthographic Size Function:" value="1.25" high-value="1.5" show-input-field="true" low-value="1" binding-path="cameraSettings.baseForCamSizeFunction" tooltip="b" name="baseForCamSizeFunction" />
         <ui:IMGUIContainer name="camChart" />
     </ui:Foldout>
-    <ui:Foldout text="Movement Settings" name="movementSettings" value="false" view-data-key="movementSettings">
-        <uie:PropertyField binding-path="movementSettings" label="Movement Settings" name="movementSettings" />
-        <ui:Foldout text="Non-Runner Settings" name="nonRunnerSettings" value="false" view-data-key="nonRunnerSettings" style="margin-left: 0;">
-            <uie:Vector2Field label="Move Force:" binding-path="movementSettings.moveForce" x="10" y="1" name="moveForce" />
-        </ui:Foldout>
-        <ui:Foldout text="Runner Settings" name="runnerSettings" value="false" view-data-key="runnerSettings" style="margin-left: 0;">
-            <ui:Toggle label="Is Constant Movement Enabled?" binding-path="movementSettings.isConstantMovementEnabled" tooltip="&quot;Endless Runner Mode&quot;. Apply a constant displacement and use a different move force." name="isConstantMovementEnabled" />
-            <uie:Vector2Field label="Constant Movement Displacement:" binding-path="movementSettings.constantMovementDisplacement" tooltip="The constant displacement applied under endless runner mode." x="5" name="constantMovementDisplacement" />
-            <uie:Vector2Field label="Constant Move Force:" binding-path="movementSettings.constantMoveForce" x="5" y="1" tooltip="The force applied when using the movement actions if endless runner mode is on." name="constantMoveForce" />
-        </ui:Foldout>
-        <ui:Foldout text="Jump Stuff" name="jumpStuff" value="false" view-data-key="jumpStuff" style="margin-left: 0;">
-            <uie:Vector2Field label="Jump Force:" binding-path="movementSettings.jumpForce" x="0.5" y="9" name="jumpForce" />
-            <ui:Slider picking-mode="Ignore" label="Max Safe Fall Speed:" value="-10" high-value="0" show-input-field="true" low-value="-20" binding-path="movementSettings.maxSafeFallSpeed" name="maxSafeFallSpeed" inverted="true" />
-            <ui:Slider picking-mode="Ignore" label="Conserved Velocity:" value="0.6" high-value="1" binding-path="movementSettings.conservedVelocity" name="conservedVelocity" show-input-field="true" tooltip="The amount of velocity conserved when jumping off enemies&apos; heads." />
-            <ui:Slider picking-mode="Ignore" label="Wallrun Angle" value="5" high-value="90" show-input-field="true" binding-path="movementSettings.wallRunAngle" tooltip="The angle of attack, in degrees, for wall runs. Determines loss of horizontal speed and hang time." name="wallRunAngle" />
-        </ui:Foldout>
-        <ui:Slider picking-mode="Ignore" label="rollSpeed" value="3" high-value="50" binding-path="movementSettings.rollSpeed" name="rollSpeed" low-value="0.0001" show-input-field="true" />
-        <ui:Slider picking-mode="Ignore" label="rollTimerLength" value="1" high-value="5" binding-path="movementSettings.rollTimerLength" name="rollTimerLength" low-value="0.0001" show-input-field="true" />
-        <uie:ObjectField label="rollInfo" allow-scene-objects="false" type="Assets.ScriptableObjects.RollAnimationInfo, Assembly-CSharp" name="rollInfo" binding-path="rollInfo" />
-        <uie:ObjectField label="coilInfo" allow-scene-objects="false" type="Assets.ScriptableObjects.RollAnimationInfo, Assembly-CSharp" name="coilInfo" binding-path="coilInfo" />
-    </ui:Foldout>
+    <uie:PropertyField binding-path="movementSettings" label="Movement Settings" name="movementSettings" />
+    <uie:PropertyField name="coilInfo" view-data-key="coilInfo" binding-path="coilInfo" label="coilInfo" />
+    <uie:PropertyField name="rollInfo" view-data-key="rollInfo" binding-path="rollInfo" label="rollInfo" />
     <ui:Foldout text="SFX" name="sfx" value="false" view-data-key="sfx">
         <uie:ObjectField label="sfx_Jump" type="UnityEngine.AudioClip, UnityEngine.AudioModule" binding-path="sfx_Jump" name="sfx_Jump" allow-scene-objects="false" />
         <uie:ObjectField label="sfx_Hurt" type="UnityEngine.AudioClip, UnityEngine.AudioModule" binding-path="sfx_Hurt" name="sfx_Hurt" allow-scene-objects="false" />
         <uie:ObjectField label="sfx_Running" type="UnityEngine.AudioClip, UnityEngine.AudioModule" binding-path="sfx_Running" name="sfx_Running" allow-scene-objects="false" />
-        <uie:ObjectField label="sfx_Shotgun" type="UnityEngine.AudioClip, UnityEngine.AudioModule" binding-path="sfx_Shotgun" name="sfx_Shotgun" allow-scene-objects="false" />
-        <uie:ObjectField label="sfx_group_Jump" type="Assets.ScriptableObjects.SFX_Group, Assembly-CSharp" binding-path="sfx_group_Jump" name="sfx_group_Jump" allow-scene-objects="false" />
-    </ui:Foldout>
-    <ui:Foldout text="MIsc." name="misc" value="false" view-data-key="misc">
-        <ui:Slider picking-mode="Ignore" label="Stumble Timer Length:" value="1" high-value="10" binding-path="stumbleTimerLength" low-value="0.001" name="stumbleTimerLength" show-input-field="true" />
-        <ui:Slider picking-mode="Ignore" label="Invincible Timer Length:" value="1" high-value="10" show-input-field="true" low-value="0.001" binding-path="invincibleTimerLength" name="invincibleTimerLength" />
+        <uie:PropertyField name="sfx_group_Jump" view-data-key="sfx_group_Jump" binding-path="sfx_group_Jump" label="sfx_group_Jump" focusable="true" />
     </ui:Foldout>
     <ui:Foldout text="Info" name="info" value="false" view-data-key="info">
         <uie:EnumField label="Collision State" value="None" type="Assets.Scripts.Player+CollisionState, Assembly-CSharp" binding-path="collisionState" name="collisionState" focusable="false" picking-mode="Ignore" />

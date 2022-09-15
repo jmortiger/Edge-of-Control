@@ -62,10 +62,6 @@ MonoBehaviour:
   spriteRenderer: {fileID: 1492775944482201785}
   aSource: {fileID: 1492775944482201792}
   particleSystem: {fileID: 1492775944482201798}
-  speedText: {fileID: 0}
-  messages: {fileID: 0}
-  scoreText: {fileID: 0}
-  damageIndicator: {fileID: 0}
   myCam: {fileID: 0}
   cam: {fileID: 0}
   cameraSettings: {fileID: 11400000, guid: a174d85549edd9346b4feea42eda8a1c, type: 2}
@@ -79,11 +75,14 @@ MonoBehaviour:
   collisionState: 0
   jumpPresses: 0
   combo: 0
-  rollAnim_EntranceLengthRatio: 0.33333334
-  rollAnim_ProperLengthRatio: 0.33333334
-  rollAnim_ExitLengthRatio: 0.33333334
-  rollAnim_MinHeightRatio: 0.5
+  boostMeter: 0
   rollInfo: {fileID: 11400000, guid: d24f1696611869d4bb736742c51a2ef1, type: 2}
+  coilInfo: {fileID: 11400000, guid: 2e6e2d1f9136c4c4c9ad90c0f77eb24f, type: 2}
+  speedText: {fileID: 0}
+  scoreText: {fileID: 0}
+  damageIndicator: {fileID: 0}
+  boostMeterUI: {fileID: 0}
+  messages: {fileID: 0}
   score: 0
 --- !u!114 &-8304432625287696403
 MonoBehaviour:

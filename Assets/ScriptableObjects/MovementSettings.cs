@@ -43,10 +43,15 @@ namespace Assets.ScriptableObjects
 		#region Unique Aerial And Grounded Movement
 		[Tooltip("If true, use the aerial and grounded move forces instead of their generic equivalents.")]
 		public bool isAerialAndGroundedMovementUnique = false;
+		[InspectorName("Ground Move Force")]
 		[Tooltip("The force applied when using the movement actions on the ground.")]
 		public Vector2 moveForceGround = new(1f, 1f);
+		[InspectorName("Aerial Move Force")]
 		[Tooltip("The force applied when using the movement actions in the air.")]
 		public Vector2 moveForceAerial = new(1f, 1f);
+		[InspectorName("Wallrun Move Force")]
+		[Tooltip("The force applied when using the movement actions while wallrunning.")]
+		public Vector2 moveForceWallrun = new(1f, 0);
 		#endregion
 
 		[Tooltip("How long does a stumble last?")]

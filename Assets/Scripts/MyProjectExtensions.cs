@@ -25,5 +25,6 @@
 			};
 		}
 
+		//public static string GetName(this InputNames ian) => ian.ToString();
 	}
 }

@@ -88,7 +88,10 @@ namespace Assets.Scripts
 		
 		public void OnFire(InputAction.CallbackContext cc)
 		{
-			if (fireRate <= 0)
+			if (fireRate <= 0 && !(
+				player.MState.HasFlag(MovementState.Rolling) || 
+				player.MState.HasFlag(MovementState.Coiling) || 
+				player.MState.HasFlag(MovementState.Stumbling)))
 			{
 				aSource.PlayOneShot(sfx_Shotgun);
 				fireRate = fireRateLength;

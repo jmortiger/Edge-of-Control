@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Controls;
@@ -66,9 +67,46 @@ namespace Assets.Scripts.Utility
 			return bounds;
 		}
 
-		public static void LogQualifiedName(this System.Type type)
+		public static void LogQualifiedName(this Type type)
 		{
 			Debug.Log($"{type.AssemblyQualifiedName}, {type.Assembly}");
 		}
+
+		#region Array manip
+		#region SlideDown
+		public static void SlideElementsDown<T>(this T[] source, T defaultValue, out T[] output, uint indexesToSlideDown = 1)
+		{
+			if (indexesToSlideDown > source.Length)
+				throw new ArgumentException("indexesToSlideDown is not <= source.Length");
+			output = new T[source.Length];
+			for (int i = source.Length - 1; i >= 0; i--)
+				output[i] = (i - indexesToSlideDown < 0) ? defaultValue : source[i - indexesToSlideDown];
+		}
+		public static void SlideElementsDown<T>(this T[] source, T defaultValue, uint indexesToSlideDown = 1)
+		{
+			if (indexesToSlideDown > source.Length)
+				throw new ArgumentException("indexesToSlideDown is not <= source.Length");
+			for (int i = source.Length - 1; i >= 0; i--)
+				source[i] = (i - indexesToSlideDown < 0) ? defaultValue : source[i - indexesToSlideDown];
+		}
+		#endregion
+		#region SlideUp
+		public static void SlideElementsUp<T>(this T[] source, T defaultValue, out T[] output, uint indexesToSlideUp = 1)
+		{
+			if (indexesToSlideUp > source.Length)
+				throw new ArgumentException("indexesToSlideUp is not <= source.Length");
+			output = new T[source.Length];
+			for (int i = 0; i < source.Length; i++)
+				output[i] = (i + indexesToSlideUp > source.Length) ? defaultValue : source[i + indexesToSlideUp];
+		}
+		public static void SlideElementsUp<T>(this T[] source, T defaultValue, uint indexesToSlideUp = 1)
+		{
+			if (indexesToSlideUp > source.Length)
+				throw new ArgumentException("indexesToSlideUp is not <= source.Length");
+			for (int i = 0; i < source.Length; i++)
+				source[i] = (i + indexesToSlideUp > source.Length) ? defaultValue : source[i + indexesToSlideUp];
+		}
+		#endregion
+		#endregion
 	}
 }

@@ -134,6 +134,10 @@ PrefabInstance:
       propertyPath: m_Enabled
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1949243002649116437, guid: b89bb8d0612d2aa4ebd50ac863fdd6b4, type: 3}
+      propertyPath: m_ShowCameraFrustum
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1949243002649116439, guid: b89bb8d0612d2aa4ebd50ac863fdd6b4, type: 3}
       propertyPath: m_RootOrder
       value: 0
@@ -589,6 +593,10 @@ PrefabInstance:
       propertyPath: m_Follow
       value: 
       objectReference: {fileID: 1708888655}
+    - target: {fileID: 2868522945402789792, guid: a8531ea029b4ede4aa86792c5ee3849a, type: 3}
+      propertyPath: m_Lens.m_SensorSize.x
+      value: 2.2064676
+      objectReference: {fileID: 0}
     - target: {fileID: 2868522945402789793, guid: a8531ea029b4ede4aa86792c5ee3849a, type: 3}
       propertyPath: m_RootOrder
       value: 1

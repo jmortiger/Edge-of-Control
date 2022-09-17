@@ -12,15 +12,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 64534f3824faf4349895642b6bba2b43, type: 3}
   m_Name: mvt_playerDefault
   m_EditorClassIdentifier: 
-  moveForce: {x: 10, y: 1}
   isConstantMovementEnabled: 0
   constantMovementDisplacement: {x: 5, y: 0}
   constantMoveForce: {x: 5, y: 1}
-  rollSpeed: 3
+  rollExitSpeed: 3
   rollTimerLength: 1
+  jumpForce: {x: 0.5, y: 9}
+  conservedVelocity: 0.6
+  boostJumpCost: 50
+  boostRunCost: 20
+  moveForce: {x: 10, y: 1}
+  isAerialAndGroundedMovementUnique: 0
+  moveForceGround: {x: 10, y: 1}
+  moveForceAerial: {x: 2.5, y: 1}
+  moveForceWallrun: {x: 1, y: 0}
   stumbleTimerLength: 1
   invincibleTimerLength: 1
-  jumpForce: {x: 0.5, y: 9}
+  coilTimerLength: 1
   maxSafeFallSpeed: -8
-  conservedVelocity: 0.6
   wallRunAngle: 5

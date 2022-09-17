@@ -74,6 +74,7 @@ namespace Assets.Scripts
 		public Vector2 PreCollisionVelocity { get => preCollisionVelocity; }
 		#endregion
 		#region SFX
+		// TODO: USE RB_Walk For running sfx
 		public AudioClip sfx_Running;
 		public AudioClip sfx_Jump;
 		public AudioClip sfx_Hurt;
@@ -106,7 +107,7 @@ namespace Assets.Scripts
 		}
 		#endregion
 
-		#region Jump & Boost Checks and Update
+		#region Jump, Boost, & DownAction Checks and Update
 		#region Jump
 		bool jumpPressedLastFrame = false;
 		bool jumpPressedThisFrame = false;
@@ -117,10 +118,16 @@ namespace Assets.Scripts
 		bool boostPressedThisFrame = false;
 		bool BoostPressedOnThisFrame { get => (boostPressedThisFrame && (!boostPressedLastFrame)); }
 		#endregion
+		#region DownAction
+		bool downActionPressedLastFrame = false;
+		bool downActionPressedThisFrame = false;
+		bool DownActionPressedOnThisFrame { get => (downActionPressedThisFrame && (!downActionPressedLastFrame)); }
+		#endregion
 		void Update()
 		{
-			jumpPressedThisFrame = jumpPressedThisFrame || input.IsPressed("Jump");
-			boostPressedThisFrame = boostPressedThisFrame || input.IsPressed("Boost");
+			jumpPressedThisFrame = jumpPressedThisFrame || input.IsPressed(InputNames.Jump);
+			boostPressedThisFrame = boostPressedThisFrame || input.IsPressed(InputNames.Boost);
+			downActionPressedThisFrame = downActionPressedThisFrame || input.IsPressed(InputNames.DownAction);
 			//Debug.Log($"{jumpPressedLastFrame}");
 		}
 		#endregion
@@ -329,7 +336,11 @@ namespace Assets.Scripts
 					}
 					var h = GetRollHeightAtTime(rollTimer);
 
+					// Stop roll shrink from making player airborne
+					//transform.position = new(transform.position.x, transform.position.y - colliderInitialDimensions.y * .5f, transform.position.z);
+					var delta = MyCapsule.size.y - h;
 					MyCapsule.size = new(colliderInitialDimensions.x, h);
+					transform.position = new(transform.position.x, transform.position.y - delta, transform.position.z);
 
 					// TODO: Remove when using animations
 					//var srb = spriteRenderer.bounds;
@@ -423,6 +434,7 @@ namespace Assets.Scripts
 				movementState |= MovementState.Grounded;
 				boostConsumable = true;
 				coilConsumable = true;
+				aSource.clip = sfx_Running;
 				particleSystem.Play(true);
 			}
 			void ExitGrounded()
@@ -442,10 +454,11 @@ namespace Assets.Scripts
 			}
 			bool TryBoostJumping(Vector2 moveVector)
 			{
-				if (JumpPressedOnThisFrame && input.IsPressed("Boost") && boostConsumable && boostMeter >= movementSettings.boostJumpCost)
+				if (JumpPressedOnThisFrame && 
+					input.IsPressed("Boost") && 
+					boostConsumable && 
+					boostMeter >= movementSettings.boostJumpCost)
 				{
-					//var moveVector = input.FindAction("Move").ReadValue<Vector2>();
-					//moveVector.x = (moveVector.x == 0) ? 0 : ((moveVector.x > 0) ? 1 : -1);
 					// If falling, zero out vertical velocity so the jump isn't fighting the downward momentum.
 					if (Velocity.y < 0)
 					{
@@ -455,13 +468,6 @@ namespace Assets.Scripts
 					}
 					//aSource.Stop();// Should I do this?
 					//particleSystem.Play();// Should I do this?
-
-					//moveVector.y = 1;
-					//var fApplied = Vector2.Scale(moveVector, movementSettings.jumpForce);
-					//rb.AddForce(fApplied, ForceMode2D.Impulse);
-					//particleSystem.Emit(30);
-					//aSource.PlayOneShot(sfx_group_Jump.GetRandomClip());
-					//movementState |= MovementState.Jumping;
 					EnterJumping(moveVector);
 					UpdateBoostMeter(-movementSettings.boostJumpCost);
 					boostConsumable = false;
@@ -482,7 +488,6 @@ namespace Assets.Scripts
 					if (movementState.HasFlag(MovementState.Rolling))
 						goto case MovementState.Rolling;
 					moveVector = moveVector.IsFinite() ? moveVector : BasicMovement(moveForceGround);
-					aSource.clip = sfx_Running;
 					// TODO: Debug running sound & particle effect start and stop.
 					// TODO: Combine this collisionState.HasFlag(CollisionState.Ground) check with the next one.
 					if (collisionState.HasFlag(CollisionState.Ground))
@@ -561,11 +566,12 @@ namespace Assets.Scripts
 					}
 					else if (collisionState.HasFlag(CollisionState.BGWall) && JumpPressedOnThisFrame && Velocity.x != 0)
 						EnterWallrunning();
-					if  ((movementState.HasFlag(MovementState.Jumping) || movementState.HasFlag(MovementState.Falling)) && // If we're in the air...
-						!(movementState.HasFlag(MovementState.Wallrunning) || movementState.HasFlag(MovementState.Stumbling)) && // ... and not wallrunning nor stumbling...
-						!TryBoostJumping(moveVector) && // ... then try boost jumping. If that fails...
-						input.IsPressed(InputNames.DownAction.GetName()) && // ... and the coil button is pressed...
-						coilConsumable) // ... and we can coil...
+					if  ((movementState.HasFlag(MovementState.Jumping) || movementState.HasFlag(MovementState.Falling)) &&		 //If we're in the air...
+						!(movementState.HasFlag(MovementState.Wallrunning) || movementState.HasFlag(MovementState.Stumbling)) && //...and not wallrunning nor stumbling...
+						!TryBoostJumping(moveVector) &&																			 //...then try boost jumping. If that fails...
+						input.IsPressed(InputNames.DownAction) &&																 //...and the coil button is pressed...
+						coilConsumable &&																						 //...and we can coil...
+						PlayerDistanceFromGround() > collider.bounds.size.y)                                                     //...and we're farther than 1 bodylength from the ground...
 						EnterCoiling();
 					if (movementState.HasFlag(MovementState.Coiling))
 						UpdateCoilState();
@@ -580,7 +586,7 @@ namespace Assets.Scripts
 					{
 						if (TryBoostJumping(moveVector))
 							movementState ^= MovementState.Falling;
-						else if (input.IsPressed(InputNames.DownAction.GetName()) && coilConsumable)
+						else if (input.IsPressed(InputNames.DownAction) && coilConsumable)
 							EnterCoiling();
 					}
 					// TODO: If fall speed too high, force to roll?
@@ -680,11 +686,14 @@ namespace Assets.Scripts
 			if (movementState.HasFlag(MovementState.Invincible))
 				UpdateInvincible();
 
+			Debug.Log(movementState);
+
 			#region After movement is handled
 			// Change Cam Size
-			myCam.m_Lens.OrthographicSize = cameraSettings.isOrthographicSizeFunctionActive ? 
-				cameraSettings.GetNewOrthographicSize(Velocity, transform.position, GlobalConstants.GroundLayer/*groundLayer*/) :
-				cameraSettings.defaultOrthographicSize;
+			//myCam.m_Lens.OrthographicSize = cameraSettings.isOrthographicSizeFunctionActive ? 
+			//	cameraSettings.GetTargetOrthographicSize(Velocity, transform.position, GlobalConstants.GroundLayer) :
+			//	cameraSettings.defaultOrthographicSize;
+			cameraSettings.UpdateCamera(myCam, /*Velocity, */transform.position, GlobalConstants.GroundLayer);
 
 			// Update speed display after application of forces.
 			UpdateSpeedText();
@@ -983,6 +992,23 @@ namespace Assets.Scripts
 			}
 		}
 		#endregion
+		#endregion
+
+		#region PlayerDistanceFromGround
+		private Vector3 _posAtLastCheck = new(float.NaN, float.NaN, float.NaN);
+		private float _lastDist = float.NaN;
+		public float PlayerDistanceFromGround(bool accountForCollider = true)
+		{
+			if (transform.position != _posAtLastCheck)
+			{
+				_posAtLastCheck = transform.position;
+				var rcResults = new RaycastHit2D[1];
+				var numResults = Physics2D.Raycast(_posAtLastCheck, Vector2.down, GlobalConstants.GroundLayer, rcResults);
+				_lastDist = (numResults > 0) ? rcResults[0].distance : float.NaN;
+				_lastDist -= (accountForCollider) ? collider.bounds.extents.y : 0; // Assumes collider not offset
+			}
+			return _lastDist;
+		}
 		#endregion
 	}
 }

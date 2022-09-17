@@ -1,4 +1,8 @@
-﻿namespace Assets.Scripts
+﻿using Assets.Scripts.Utility;
+using UnityEngine;
+using UnityEngine.InputSystem;
+
+namespace Assets.Scripts
 {
 	public enum GameSceneObject
 	{
@@ -8,6 +12,20 @@
 		EnemyManager,
 		Player,
 		Canvas,
+	}
+	/// <summary>
+	/// The names of InputActions.
+	/// </summary>
+	public enum InputNames
+	{
+		Move,
+		Look,
+		Fire,
+		DebugReset,
+		Aim,
+		Jump,//UpAction
+		Boost,
+		DownAction,
 	}
 	public static class MyProjectExtensions
 	{
@@ -25,6 +43,11 @@
 			};
 		}
 
-		//public static string GetName(this InputNames ian) => ian.ToString();
+		public static string GetName(this InputNames ian) => ian.ToString();
+
+		public static bool WasPressedThisFrame			(this PlayerInput input, InputNames actionName) => input.WasPressedThisFrame(actionName.ToString());
+		public static bool IsPressed					(this PlayerInput input, InputNames actionName) => input.IsPressed(actionName.ToString());
+		public static InputAction FindAction			(this PlayerInput input, InputNames actionName) => input.FindAction(actionName.ToString());
+		public static Vector2 GetActionValueAsJoystick	(this PlayerInput input, InputNames actionName, Vector2 relativeTo) => input.GetActionValueAsJoystick(actionName.ToString(), relativeTo);
 	}
 }

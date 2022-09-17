@@ -18,7 +18,10 @@ namespace Assets.Scripts
 			get
 			{
 				if (!enemyAndGround_Initialized)
-					enemyAndGround = new ContactFilter2D() { layerMask = LayerMask.GetMask(new string[] { "Ground", "Enemy" }) };
+				{
+					enemyAndGround = new ContactFilter2D() { useLayerMask = true, layerMask = LayerMask.GetMask("Ground", "Enemy") };
+					enemyAndGround_Initialized = true;
+				}
 				return enemyAndGround;
 			}
 		}
@@ -31,7 +34,10 @@ namespace Assets.Scripts
 			get
 			{
 				if (!enemyLayer_Initialized)
-					enemyLayer = new ContactFilter2D() { layerMask = LayerMask.GetMask(new string[] { "Enemy" }) };
+				{
+					enemyLayer = new ContactFilter2D() { useLayerMask = true, layerMask = LayerMask.GetMask("Enemy") };
+					enemyLayer_Initialized = true;
+				}
 				return enemyLayer;
 			}
 		}
@@ -44,7 +50,10 @@ namespace Assets.Scripts
 			get
 			{
 				if (!groundLayer_Initialized)
-					groundLayer = new ContactFilter2D() { layerMask = LayerMask.GetMask(new string[] { "Ground" }) };
+				{
+					groundLayer = new ContactFilter2D() { useLayerMask = true, layerMask = LayerMask.GetMask("Ground") };
+					groundLayer_Initialized = true;
+				}
 				return groundLayer;
 			}
 		}
@@ -57,27 +66,14 @@ namespace Assets.Scripts
 			get
 			{
 				if (!allButNonCollidingAndEnemyLayer_Initialized)
-					allButNonCollidingAndEnemyLayer = new ContactFilter2D() { layerMask = LayerMask.GetMask(new string[] { "Ground", "Default", "Player" }) };
+				{
+					allButNonCollidingAndEnemyLayer = new ContactFilter2D() { useLayerMask = true, layerMask = LayerMask.GetMask("Ground", "Default", "Player") };
+					allButNonCollidingAndEnemyLayer_Initialized = true;
+				}
 				return allButNonCollidingAndEnemyLayer;
 			}
 		}
 		#endregion
 		#endregion
-
-		public static string GetName(this InputNames ian) => ian.ToString();
-	}
-	/// <summary>
-	/// The names of InputActions.
-	/// </summary>
-	public enum InputNames
-	{
-		Move,
-		Look,
-		Fire,
-		DebugReset,
-		Aim,
-		Jump,//UpAction
-		Boost,
-		DownAction,
 	}
 }

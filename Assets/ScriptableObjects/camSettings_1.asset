@@ -17,3 +17,5 @@ MonoBehaviour:
   initialCameraOrthographicSize: 5
   scaleDistance: 0.75
   baseForCamSizeFunction: 1.15
+  easeOrthographicSizeChange: 0
+  easeIntensity: 0.5

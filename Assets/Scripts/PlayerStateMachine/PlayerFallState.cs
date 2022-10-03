@@ -13,17 +13,17 @@ namespace Assets.Scripts.PlayerStateMachine
 			Ctx.movementState |= MovementState.Falling;
 		}
 
-		#region Likely Unnecessary
-		public override void CheckSwitchState()
-		{
-			throw new NotImplementedException();
-		}
+		//#region Likely Unnecessary
+		//public override void CheckSwitchState()
+		//{
+		//	throw new NotImplementedException();
+		//}
 
-		public override void InitializeSubState()
-		{
-			throw new NotImplementedException();
-		}
-		#endregion
+		//public override void InitializeSubState()
+		//{
+		//	throw new NotImplementedException();
+		//}
+		//#endregion
 
 		public override void UpdateState()
 		{

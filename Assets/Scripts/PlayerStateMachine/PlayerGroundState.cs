@@ -78,17 +78,17 @@ namespace Assets.Scripts.PlayerStateMachine
 			}
 		}
 
-		#region Likely Unnessecary
-		public override void InitializeSubState()
-		{
-			throw new NotImplementedException();
-		}
+		//#region Likely Unnessecary
+		//public override void InitializeSubState()
+		//{
+		//	throw new NotImplementedException();
+		//}
 
-		public override void CheckSwitchState()
-		{
-			throw new NotImplementedException();
-		}
-		#endregion
+		//public override void CheckSwitchState()
+		//{
+		//	throw new NotImplementedException();
+		//}
+		//#endregion
 
 		//public override void CheckSwitchState()
 		//{

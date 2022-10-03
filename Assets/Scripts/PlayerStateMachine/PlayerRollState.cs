@@ -39,67 +39,67 @@ namespace Assets.Scripts.PlayerStateMachine
 			Ctx.MyPlayer.AddUIMessage("Successful PK Roll");
 		}
 
-		#region Likely Unnecessary
+		//#region Likely Unnecessary
+		////public override void CheckSwitchState()
+		////{
+		////	// TODO: Apply DRY to following 2 ifs
+		////	if (_ctx.collisionState.HasFlag(CollisionState.EnemyCollider))
+		////	{
+		////		ExitState(StateSwitchBehaviour.KillAllButBase);
+		////		EnterStumble();
+		////		return;
+		////	}
+		////	else if (_ctx.rollTimer <= 0f/* || (collisionState.HasFlag(CollisionState.Ground) && rb.OverlapCollider(enemyLayer, enemyCollidersOverlapped) <= 0)*/)
+		////	{
+		////		_ctx.rb.velocity = new(_ctx.movementSettings.rollExitSpeed * (_ctx.rollRight ? 1 : -1), _ctx.Velocity.y);
+
+		////		ExitState(StateSwitchBehaviour.KillSelf);
+		////		return;
+		////	}
+		////}
+
+		////public override void UpdateState()
+		////{
+		////	//_ctx.transform.position += new Vector3(_ctx.movementSettings.rollSpeed * Time.fixedDeltaTime * (_ctx.rollRight ? 1 : -1), 0f, 0f);
+		////	_ctx.rollTimer -= Time.fixedDeltaTime;
+		////	_ctx.rollTimer = (_ctx.rollTimer < 0) ? 0 : _ctx.rollTimer;
+
+		////	_ctx.rb.velocity = new(Mathf.Lerp(_ctx.movementSettings.rollExitSpeed, _ctx.rollInitialVx, _ctx.rollTimer / _ctx.movementSettings.rollTimerLength) * (_ctx.rollRight ? 1 : -1), _ctx.Velocity.y);
+
+		////	float GetRollHeightAtTime(float rollTimer)
+		////	{
+		////		if (rollTimer <= _ctx.MyPlayer.rollInfo.entranceLengthRatio * _ctx.movementSettings.rollTimerLength)
+		////			return Mathf.SmoothStep(_ctx.MyPlayer.colliderInitialDimensions.y, _ctx.MyPlayer.colliderInitialDimensions.y * _ctx.MyPlayer.rollInfo.minHeightRatio, rollTimer / (_ctx.movementSettings.rollTimerLength / 2));
+		////		else if (rollTimer <= (_ctx.MyPlayer.rollInfo.entranceLengthRatio + _ctx.MyPlayer.rollInfo.properLengthRatio) * _ctx.movementSettings.rollTimerLength)
+		////			return _ctx.MyPlayer.colliderInitialDimensions.y * _ctx.MyPlayer.rollInfo.minHeightRatio;
+		////		else
+		////			return Mathf.SmoothStep(_ctx.MyPlayer.colliderInitialDimensions.y * _ctx.MyPlayer.rollInfo.minHeightRatio, _ctx.MyPlayer.colliderInitialDimensions.y, (rollTimer / (_ctx.MyPlayer.movementSettings.rollTimerLength / 2)) - 1);
+		////	}
+		////	var h = GetRollHeightAtTime(_ctx.rollTimer);
+
+		////	// TOOD: Roll displacement prevention is jittery, tweak
+		////	// Stop roll shrink from making player airborne
+		////	//transform.position = new(transform.position.x, transform.position.y - colliderInitialDimensions.y * .5f, transform.position.z);
+		////	var delta = _ctx.MyPlayer.MyCapsule.size.y - h;
+		////	_ctx.MyPlayer.MyCapsule.size = new(_ctx.MyPlayer.colliderInitialDimensions.x, h);
+		////	_ctx.transform.position = new(_ctx.transform.position.x, _ctx.transform.position.y - delta, _ctx.transform.position.z);
+
+		////	// TODO: Remove when using animations
+		////	//var srb = spriteRenderer.bounds;
+		////	//srb.size = new Vector3(colliderInitialDimensions.x, h, rendererInitialDimensions.z);//srb.size.z);
+		////	//spriteRenderer.bounds = srb;
+		////}
+
+		//public override void InitializeSubState()
+		//{
+		//	throw new System.NotImplementedException();
+		//}
+
 		//public override void CheckSwitchState()
 		//{
-		//	// TODO: Apply DRY to following 2 ifs
-		//	if (_ctx.collisionState.HasFlag(CollisionState.EnemyCollider))
-		//	{
-		//		ExitState(StateSwitchBehaviour.KillAllButBase);
-		//		EnterStumble();
-		//		return;
-		//	}
-		//	else if (_ctx.rollTimer <= 0f/* || (collisionState.HasFlag(CollisionState.Ground) && rb.OverlapCollider(enemyLayer, enemyCollidersOverlapped) <= 0)*/)
-		//	{
-		//		_ctx.rb.velocity = new(_ctx.movementSettings.rollExitSpeed * (_ctx.rollRight ? 1 : -1), _ctx.Velocity.y);
-
-		//		ExitState(StateSwitchBehaviour.KillSelf);
-		//		return;
-		//	}
+		//	throw new System.NotImplementedException();
 		//}
-
-		//public override void UpdateState()
-		//{
-		//	//_ctx.transform.position += new Vector3(_ctx.movementSettings.rollSpeed * Time.fixedDeltaTime * (_ctx.rollRight ? 1 : -1), 0f, 0f);
-		//	_ctx.rollTimer -= Time.fixedDeltaTime;
-		//	_ctx.rollTimer = (_ctx.rollTimer < 0) ? 0 : _ctx.rollTimer;
-
-		//	_ctx.rb.velocity = new(Mathf.Lerp(_ctx.movementSettings.rollExitSpeed, _ctx.rollInitialVx, _ctx.rollTimer / _ctx.movementSettings.rollTimerLength) * (_ctx.rollRight ? 1 : -1), _ctx.Velocity.y);
-
-		//	float GetRollHeightAtTime(float rollTimer)
-		//	{
-		//		if (rollTimer <= _ctx.MyPlayer.rollInfo.entranceLengthRatio * _ctx.movementSettings.rollTimerLength)
-		//			return Mathf.SmoothStep(_ctx.MyPlayer.colliderInitialDimensions.y, _ctx.MyPlayer.colliderInitialDimensions.y * _ctx.MyPlayer.rollInfo.minHeightRatio, rollTimer / (_ctx.movementSettings.rollTimerLength / 2));
-		//		else if (rollTimer <= (_ctx.MyPlayer.rollInfo.entranceLengthRatio + _ctx.MyPlayer.rollInfo.properLengthRatio) * _ctx.movementSettings.rollTimerLength)
-		//			return _ctx.MyPlayer.colliderInitialDimensions.y * _ctx.MyPlayer.rollInfo.minHeightRatio;
-		//		else
-		//			return Mathf.SmoothStep(_ctx.MyPlayer.colliderInitialDimensions.y * _ctx.MyPlayer.rollInfo.minHeightRatio, _ctx.MyPlayer.colliderInitialDimensions.y, (rollTimer / (_ctx.MyPlayer.movementSettings.rollTimerLength / 2)) - 1);
-		//	}
-		//	var h = GetRollHeightAtTime(_ctx.rollTimer);
-
-		//	// TOOD: Roll displacement prevention is jittery, tweak
-		//	// Stop roll shrink from making player airborne
-		//	//transform.position = new(transform.position.x, transform.position.y - colliderInitialDimensions.y * .5f, transform.position.z);
-		//	var delta = _ctx.MyPlayer.MyCapsule.size.y - h;
-		//	_ctx.MyPlayer.MyCapsule.size = new(_ctx.MyPlayer.colliderInitialDimensions.x, h);
-		//	_ctx.transform.position = new(_ctx.transform.position.x, _ctx.transform.position.y - delta, _ctx.transform.position.z);
-
-		//	// TODO: Remove when using animations
-		//	//var srb = spriteRenderer.bounds;
-		//	//srb.size = new Vector3(colliderInitialDimensions.x, h, rendererInitialDimensions.z);//srb.size.z);
-		//	//spriteRenderer.bounds = srb;
-		//}
-
-		public override void InitializeSubState()
-		{
-			throw new System.NotImplementedException();
-		}
-
-		public override void CheckSwitchState()
-		{
-			throw new System.NotImplementedException();
-		}
-		#endregion
+		//#endregion
 
 		public override void UpdateState()
 		{

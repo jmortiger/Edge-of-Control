@@ -40,16 +40,16 @@ namespace Assets.Scripts.PlayerStateMachine
 				ExitState(StateSwitchBehaviour.All);
 		}
 
-		#region Likely Unnecessary
-		public override void CheckSwitchState()
-		{
-			throw new NotImplementedException();
-		}
+		//#region Likely Unnecessary
+		//public override void CheckSwitchState()
+		//{
+		//	throw new NotImplementedException();
+		//}
 
-		public override void InitializeSubState()
-		{
-			throw new NotImplementedException();
-		}
-		#endregion
+		//public override void InitializeSubState()
+		//{
+		//	throw new NotImplementedException();
+		//}
+		//#endregion
 	}
 }

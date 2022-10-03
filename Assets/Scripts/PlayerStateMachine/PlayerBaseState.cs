@@ -23,8 +23,11 @@ namespace Assets.Scripts.PlayerStateMachine
 			ExitAction = exitAction;
 		}
 
+		//public abstract void CheckSwitchState();
+		//public abstract void InitializeSubState();
 		public abstract void EnterState();
-		public virtual void ExitState(StateSwitchBehaviour behaviour = StateSwitchBehaviour.Self)
+		public abstract void UpdateState();
+		public void ExitState(StateSwitchBehaviour behaviour = StateSwitchBehaviour.Self)
 		{
 			// TODO: Disjoint states currently don't support sub/super state.
 			if ((PlayerBaseState)Ctx.CurrentDisjointState == this && !behaviour.HasFlag(StateSwitchBehaviour.None))
@@ -84,10 +87,8 @@ namespace Assets.Scripts.PlayerStateMachine
 				}
 			}
 		}
-		public abstract void UpdateState();
-		public abstract void CheckSwitchState();
-		public abstract void InitializeSubState();
 
+		#region SwitchState
 		/// <summary>
 		/// 
 		/// </summary>
@@ -184,10 +185,12 @@ namespace Assets.Scripts.PlayerStateMachine
 			else
 				throw new ArgumentNullException();
 		}
+		#endregion
 
+		#region Non-Core Stuff
 		protected bool CanBoostJump()
 		{
-			return	Ctx.JumpButton.InputPressedOnThisFrame &&
+			return Ctx.JumpButton.InputPressedOnThisFrame &&
 					Ctx.Input.IsPressed(InputNames.Boost) &&
 					Ctx.boostConsumable &&
 					Ctx.MyPlayer.boostMeter >= Ctx.MvmtSettings.boostJumpCost;
@@ -215,10 +218,7 @@ namespace Assets.Scripts.PlayerStateMachine
 		}
 
 		#region IEnumerable Implementation
-		public IEnumerator GetEnumerator()
-		{
-			return new PlayerBaseStateEnumerator(this);
-		}
+		public IEnumerator GetEnumerator() => new PlayerBaseStateEnumerator(this);
 		class PlayerBaseStateEnumerator : IEnumerator
 		{
 			private readonly PlayerBaseState original;
@@ -226,18 +226,19 @@ namespace Assets.Scripts.PlayerStateMachine
 
 			public PlayerBaseStateEnumerator(PlayerBaseState original)
 			{
-				this.original = original;
+				this.original = original ?? throw new ArgumentNullException();
 				Current = null;
 			}
 
 			public bool MoveNext()
 			{
-				Current = (Current == null) ? Current = original : ((PlayerBaseState)Current).SubState;
-				return Current == null;
+				Current = (Current == null) ? original : ((PlayerBaseState)Current).SubState;
+				return Current != null;
 			}
 
 			public void Reset() => Current = null;
 		}
+		#endregion
 		#endregion
 	}
 

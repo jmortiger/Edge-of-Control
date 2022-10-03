@@ -99,6 +99,7 @@ namespace Assets.Scripts.PlayerStateMachine
 
 			Debug.Log(movementState);
 			var enumerator = CurrentBaseState.GetEnumerator();
+			//enumerator.MoveNext();
 			Debug.Assert(enumerator.MoveNext());
 			var prev = (PlayerBaseState)enumerator.Current;
 			if (((PlayerBaseState)enumerator.Current).SubState != null)

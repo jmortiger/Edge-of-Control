@@ -23,17 +23,17 @@ namespace Assets.Scripts.PlayerStateMachine
 		float wallrunStartDir = 0f;
 		#endregion
 
-		#region Likely Unnecessary
-		public override void CheckSwitchState()
-		{
-			throw new System.NotImplementedException();
-		}
+		//#region Likely Unnecessary
+		//public override void CheckSwitchState()
+		//{
+		//	throw new System.NotImplementedException();
+		//}
 
-		public override void InitializeSubState()
-		{
-			throw new System.NotImplementedException();
-		}
-		#endregion
+		//public override void InitializeSubState()
+		//{
+		//	throw new System.NotImplementedException();
+		//}
+		//#endregion
 
 		public override void EnterState()
 		{

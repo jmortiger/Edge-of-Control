@@ -37,58 +37,58 @@ namespace Assets.Scripts.PlayerStateMachine
 			Ctx.MyPlayer.UpdateAerialChain(1);
 		}
 
-		#region Likely Unnecessary
-		public override void InitializeSubState()
-		{
-			throw new NotImplementedException();
-		}
+		//#region Likely Unnecessary
+		//public override void InitializeSubState()
+		//{
+		//	throw new NotImplementedException();
+		//}
 
-		public override void CheckSwitchState()
-		{
-			throw new NotImplementedException();
-		}
 		//public override void CheckSwitchState()
 		//{
-		//	if (!_ctx.movementState.HasFlag(MovementState.Jumping) &&
-		//		!_ctx.movementState.HasFlag(MovementState.Falling))
-		//	{
-		//		ExitState(StateSwitchBehaviour.KillSelf);
-		//		return;
-		//	}
-		//	// TODO: Apply DRY to following 2 ifs
-		//	if (_ctx.collisionState.HasFlag(CollisionState.EnemyCollider) && !_ctx.movementState.HasFlag(MovementState.Invincible))
-		//	{
-		//		ExitState(StateSwitchBehaviour.KillAllButBase);
-		//		EnterStumble();
-		//	}
-		//	else if (_ctx.coilTimer <= 0f || (_ctx.collisionState.HasFlag(CollisionState.Ground)/* && rb.OverlapCollider(GlobalConstants.EnemyLayer, enemyCollidersOverlapped) <= 0*/))
-		//		ExitState(StateSwitchBehaviour.KillSelf);
+		//	throw new NotImplementedException();
 		//}
+		////public override void CheckSwitchState()
+		////{
+		////	if (!_ctx.movementState.HasFlag(MovementState.Jumping) &&
+		////		!_ctx.movementState.HasFlag(MovementState.Falling))
+		////	{
+		////		ExitState(StateSwitchBehaviour.KillSelf);
+		////		return;
+		////	}
+		////	// TODO: Apply DRY to following 2 ifs
+		////	if (_ctx.collisionState.HasFlag(CollisionState.EnemyCollider) && !_ctx.movementState.HasFlag(MovementState.Invincible))
+		////	{
+		////		ExitState(StateSwitchBehaviour.KillAllButBase);
+		////		EnterStumble();
+		////	}
+		////	else if (_ctx.coilTimer <= 0f || (_ctx.collisionState.HasFlag(CollisionState.Ground)/* && rb.OverlapCollider(GlobalConstants.EnemyLayer, enemyCollidersOverlapped) <= 0*/))
+		////		ExitState(StateSwitchBehaviour.KillSelf);
+		////}
 
-		//public override void UpdateState()
-		//{
-		//	_ctx.coilTimer -= Time.fixedDeltaTime;
-		//	_ctx.coilTimer = (_ctx.coilTimer < 0) ? 0 : _ctx.coilTimer;
+		////public override void UpdateState()
+		////{
+		////	_ctx.coilTimer -= Time.fixedDeltaTime;
+		////	_ctx.coilTimer = (_ctx.coilTimer < 0) ? 0 : _ctx.coilTimer;
 
-		//	float GetCoilHeightAtTime(float coilTimer)
-		//	{
-		//		if (coilTimer <= _ctx.MyPlayer.coilInfo.entranceLengthRatio * _ctx.movementSettings.coilTimerLength)
-		//			return Mathf.SmoothStep(_ctx.MyPlayer.colliderInitialDimensions.y, _ctx.MyPlayer.colliderInitialDimensions.y * _ctx.MyPlayer.coilInfo.minHeightRatio, coilTimer / (_ctx.movementSettings.coilTimerLength / 2));
-		//		else if (coilTimer <= (_ctx.MyPlayer.coilInfo.entranceLengthRatio + _ctx.MyPlayer.coilInfo.properLengthRatio) * _ctx.movementSettings.coilTimerLength)
-		//			return _ctx.MyPlayer.colliderInitialDimensions.y * _ctx.MyPlayer.coilInfo.minHeightRatio;
-		//		else
-		//			return Mathf.SmoothStep(_ctx.MyPlayer.colliderInitialDimensions.y * _ctx.MyPlayer.coilInfo.minHeightRatio, _ctx.MyPlayer.colliderInitialDimensions.y, (coilTimer / (_ctx.movementSettings.coilTimerLength / 2)) - 1);
-		//	}
-		//	var h = GetCoilHeightAtTime(_ctx.coilTimer);
+		////	float GetCoilHeightAtTime(float coilTimer)
+		////	{
+		////		if (coilTimer <= _ctx.MyPlayer.coilInfo.entranceLengthRatio * _ctx.movementSettings.coilTimerLength)
+		////			return Mathf.SmoothStep(_ctx.MyPlayer.colliderInitialDimensions.y, _ctx.MyPlayer.colliderInitialDimensions.y * _ctx.MyPlayer.coilInfo.minHeightRatio, coilTimer / (_ctx.movementSettings.coilTimerLength / 2));
+		////		else if (coilTimer <= (_ctx.MyPlayer.coilInfo.entranceLengthRatio + _ctx.MyPlayer.coilInfo.properLengthRatio) * _ctx.movementSettings.coilTimerLength)
+		////			return _ctx.MyPlayer.colliderInitialDimensions.y * _ctx.MyPlayer.coilInfo.minHeightRatio;
+		////		else
+		////			return Mathf.SmoothStep(_ctx.MyPlayer.colliderInitialDimensions.y * _ctx.MyPlayer.coilInfo.minHeightRatio, _ctx.MyPlayer.colliderInitialDimensions.y, (coilTimer / (_ctx.movementSettings.coilTimerLength / 2)) - 1);
+		////	}
+		////	var h = GetCoilHeightAtTime(_ctx.coilTimer);
 
-		//	_ctx.MyPlayer.MyCapsule/*MyCollider*/.size = new(_ctx.MyPlayer.colliderInitialDimensions.x, h);
+		////	_ctx.MyPlayer.MyCapsule/*MyCollider*/.size = new(_ctx.MyPlayer.colliderInitialDimensions.x, h);
 
-		//	// TODO: Remove when using animations
-		//	//var srb = spriteRenderer.bounds;
-		//	//srb.size = new Vector3(colliderInitialDimensions.x, h, rendererInitialDimensions.z);//srb.size.z);
-		//	//spriteRenderer.bounds = srb;
-		//}
-		#endregion
+		////	// TODO: Remove when using animations
+		////	//var srb = spriteRenderer.bounds;
+		////	//srb.size = new Vector3(colliderInitialDimensions.x, h, rendererInitialDimensions.z);//srb.size.z);
+		////	//spriteRenderer.bounds = srb;
+		////}
+		//#endregion
 
 		public override void UpdateState()
 		{

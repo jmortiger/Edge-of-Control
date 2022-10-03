@@ -8,17 +8,17 @@ namespace Assets.Scripts.PlayerStateMachine
 		public PlayerJumpState(PlayerStateMachineContext ctx, PlayerStateFactory factory) 
 			: base(ctx, factory, MovementState.Jumping) { }
 
-		#region Likely Unnessecary
-		public override void CheckSwitchState()
-		{
-			throw new System.NotImplementedException();
-		}
+		//#region Likely Unnessecary
+		//public override void CheckSwitchState()
+		//{
+		//	throw new System.NotImplementedException();
+		//}
 
-		public override void InitializeSubState()
-		{
-			throw new System.NotImplementedException();
-		}
-		#endregion
+		//public override void InitializeSubState()
+		//{
+		//	throw new System.NotImplementedException();
+		//}
+		//#endregion
 
 		public override void EnterState()
 		{

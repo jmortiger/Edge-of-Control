@@ -18,6 +18,7 @@ namespace Assets.Scripts.Utility
 		#endregion
 
 		#region PlayerInput Helpers
+		#region InputAction.name via string
 		public static bool WasPressedThisFrame(this PlayerInput input, string actionNameOrId)
 		{
 			return ((ButtonControl)input.actions.FindAction(actionNameOrId)?.activeControl)?.wasPressedThisFrame ?? false;
@@ -36,10 +37,77 @@ namespace Assets.Scripts.Utility
 		{
 			var control = input.actions.FindAction(actionNameOrId);
 			var val = control.ReadValue<Vector2>();
-			return ((control?.activeControl?.device is Mouse) ? 
-				((Vector2)Camera.main.ScreenToWorldPoint(val) - relativeTo) : 
+			return ((control?.activeControl?.device is Mouse) ?
+				((Vector2)Camera.main.ScreenToWorldPoint(val) - relativeTo) :
 				val).normalized;
 		}
+		#endregion
+		#region InputAction.name via Generic Enum
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <typeparam name="T">
+		/// An enum where the names of all the values DIRECTLY corrospond 
+		/// to the name of an <see cref="InputAction.name"/>.
+		/// </typeparam>
+		/// <param name="input"></param>
+		/// <param name="actionName"></param>
+		/// <returns></returns>
+		/// <remarks>
+		/// This method requires an enum where the names of all the values DIRECTLY corrospond 
+		/// to the name of an <see cref="InputAction.name"/>. As such, InputActions must have names representable 
+		/// in code (i.e. no spaces, certain special characters, etc).
+		/// </remarks>
+		public static bool WasPressedThisFrame<T>(this PlayerInput input, T actionName) where T : System.Enum => input.WasPressedThisFrame(actionName.ToString());
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <typeparam name="T">
+		/// An enum where the names of all the values DIRECTLY corrospond 
+		/// to the name of an <see cref="InputAction.name"/>.
+		/// </typeparam>
+		/// <param name="input"></param>
+		/// <param name="actionName"></param>
+		/// <returns></returns>
+		/// <remarks>
+		/// This method requires an enum where the names of all the values DIRECTLY corrospond 
+		/// to the name of an <see cref="InputAction.name"/>. As such, InputActions must have names representable 
+		/// in code (i.e. no spaces, certain special characters, etc).
+		/// </remarks>
+		public static bool IsPressed<T>(this PlayerInput input, T actionName) where T : System.Enum => input.IsPressed(actionName.ToString());
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <typeparam name="T">
+		/// An enum where the names of all the values DIRECTLY corrospond 
+		/// to the name of an <see cref="InputAction.name"/>.
+		/// </typeparam>
+		/// <param name="input"></param>
+		/// <param name="actionName"></param>
+		/// <returns></returns>
+		/// <remarks>
+		/// This method requires an enum where the names of all the values DIRECTLY corrospond 
+		/// to the name of an <see cref="InputAction.name"/>. As such, InputActions must have names representable 
+		/// in code (i.e. no spaces, certain special characters, etc).
+		/// </remarks>
+		public static InputAction FindAction<T>(this PlayerInput input, T actionName) where T : System.Enum => input.FindAction(actionName.ToString());
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <typeparam name="T">
+		/// An enum where the names of all the values DIRECTLY corrospond 
+		/// to the name of an <see cref="InputAction.name"/>.
+		/// </typeparam>
+		/// <param name="input"></param>
+		/// <param name="actionName"></param>
+		/// <returns></returns>
+		/// <remarks>
+		/// This method requires an enum where the names of all the values DIRECTLY corrospond 
+		/// to the name of an <see cref="InputAction.name"/>. As such, InputActions must have names representable 
+		/// in code (i.e. no spaces, certain special characters, etc).
+		/// </remarks>
+		public static Vector2 GetActionValueAsJoystick<T>(this PlayerInput input, T actionName, Vector2 relativeTo) where T : System.Enum => input.GetActionValueAsJoystick(actionName.ToString(), relativeTo);
+		#endregion
 		public static Vector2 GetRightStickOrMouseValueAsJoystickEditor(this PlayerInput input, Vector2 relativeTo)
 		{
 			return ((Gamepad.current != null) ? 
@@ -72,8 +140,24 @@ namespace Assets.Scripts.Utility
 			Debug.Log($"{type.AssemblyQualifiedName}, {type.Assembly}");
 		}
 
+		public static bool HasFlag<T>(this T[] enumFlags, T flag) where T : Enum
+		{
+			for (int i = 0; i < enumFlags.Length; i++)
+				if (enumFlags[i].HasFlag(flag))
+					return true;
+			return false;
+		}
+
 		#region Array manip
 		#region SlideDown
+		/// <summary>
+		/// i.e. the element at source[0] is moved to source[0+indexesToSlideDown], etc.
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="source"></param>
+		/// <param name="defaultValue"></param>
+		/// <param name="output"></param>
+		/// <param name="indexesToSlideDown"></param>
 		public static void SlideElementsDown<T>(this T[] source, T defaultValue, out T[] output, uint indexesToSlideDown = 1)
 		{
 			if (indexesToSlideDown > source.Length)
@@ -82,6 +166,13 @@ namespace Assets.Scripts.Utility
 			for (int i = source.Length - 1; i >= 0; i--)
 				output[i] = (i - indexesToSlideDown < 0) ? defaultValue : source[i - indexesToSlideDown];
 		}
+		/// <summary>
+		/// i.e. the element at source[0] is moved to source[0+indexesToSlideDown], etc.
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="source"></param>
+		/// <param name="defaultValue"></param>
+		/// <param name="indexesToSlideDown"></param>
 		public static void SlideElementsDown<T>(this T[] source, T defaultValue, uint indexesToSlideDown = 1)
 		{
 			if (indexesToSlideDown > source.Length)

@@ -1,4 +1,5 @@
 using Assets.ScriptableObjects;
+using Assets.Scripts.PlayerStateMachine;
 using Assets.Scripts.Utility;
 using Cinemachine;
 using System;
@@ -24,11 +25,13 @@ namespace Assets.Scripts
 	{
 		#region Component References
 		[SerializeField] new Collider2D collider;
-		CapsuleCollider2D MyCapsule { get => (CapsuleCollider2D)collider; }
+		public CapsuleCollider2D MyCapsule { get => (CapsuleCollider2D)collider; }
 		public PlayerInput input;
 		public Rigidbody2D rb;
 		[SerializeField] CinemachineImpulseSource impulseSource;
+		public CinemachineImpulseSource ImpulseSource { get => impulseSource; }
 		[SerializeField] SpriteRenderer spriteRenderer;
+		public SpriteRenderer SRenderer { get => spriteRenderer; }
 		[SerializeField] AudioSource aSource;
 		[SerializeField] new ParticleSystem particleSystem;
 		[ContextMenu("Assign Component References")]
@@ -51,7 +54,8 @@ namespace Assets.Scripts
 		[Expandable]
 		public CameraSettings cameraSettings;
 		#endregion
-
+		PlayerStateMachineContext _ctx;
+		PlayerStateFactory _factory;
 		[ContextMenu("Assign Scene References")]
 		void AssignSceneReferences()
 		{
@@ -59,7 +63,7 @@ namespace Assets.Scripts
 			messages = GameObject.Find("Messages").GetComponent<TMP_Text>();
 			scoreText = GameObject.Find("Score").GetComponent<TMP_Text>();
 			damageIndicator = FindObjectOfType<DamageIndicator>();
-			boostMeterUI = FindObjectOfType<UnityEngine.UI.Slider>();
+			boostMeterUI = FindObjectOfType<Slider>();
 			myCam = FindObjectOfType<CinemachineVirtualCamera>();
 			cam = FindObjectOfType<Camera>();
 		}
@@ -92,7 +96,7 @@ namespace Assets.Scripts
 		/// <summary>
 		/// Used to restore size after rolling.
 		/// </summary>
-		private Vector2 colliderInitialDimensions;
+		public Vector2 colliderInitialDimensions { get; private set; }
 		///// <summary>
 		///// Used to restore size after rolling.
 		///// </summary>
@@ -104,42 +108,41 @@ namespace Assets.Scripts
 
 			colliderInitialDimensions = collider.bounds.size;
 			//rendererInitialDimensions = spriteRenderer.bounds.size;
+
+			_ctx = new PlayerStateMachineContext(this);
+			_factory = new PlayerStateFactory(_ctx);
+			_ctx.CurrentBaseState = _factory.GroundState;
 		}
 		#endregion
 
 		#region Jump, Boost, & DownAction Checks and Update
-		#region Jump
-		bool jumpPressedLastFrame = false;
-		bool jumpPressedThisFrame = false;
-		public bool JumpPressedOnThisFrame { get => (jumpPressedThisFrame && (!jumpPressedLastFrame)); }
-		#endregion
-		#region Boost
-		bool boostPressedLastFrame = false;
-		bool boostPressedThisFrame = false;
-		bool BoostPressedOnThisFrame { get => (boostPressedThisFrame && (!boostPressedLastFrame)); }
-		#endregion
-		#region DownAction
-		bool downActionPressedLastFrame = false;
-		bool downActionPressedThisFrame = false;
-		bool DownActionPressedOnThisFrame { get => (downActionPressedThisFrame && (!downActionPressedLastFrame)); }
-		#endregion
+		public readonly ButtonInfo<InputNames> jumpButton		= new(InputNames.Jump);
+		public readonly ButtonInfo<InputNames> boostButton		= new(InputNames.Boost);
+		public readonly ButtonInfo<InputNames> downActionButton	= new(InputNames.DownAction);
 		void Update()
 		{
-			jumpPressedThisFrame = jumpPressedThisFrame || input.IsPressed(InputNames.Jump);
-			boostPressedThisFrame = boostPressedThisFrame || input.IsPressed(InputNames.Boost);
-			downActionPressedThisFrame = downActionPressedThisFrame || input.IsPressed(InputNames.DownAction);
-			//Debug.Log($"{jumpPressedLastFrame}");
+			// Poll input
+			jumpButton		.Update/*_DEBUG*/(input);
+			boostButton		.Update/*_DEBUG*/(input);
+			downActionButton.Update/*_DEBUG*/(input);
 		}
 		#endregion
 		#region State
 		#region Flags
 		[SerializeField]
+		MovementState[] movementStateBuffer = new MovementState[10];
+		[SerializeField]
 		MovementState movementState = MovementState.None;
 		public MovementState MState { get => movementState; }
+		[SerializeField] CollisionState[] collisionStateBuffer = new CollisionState[10];
+		public CollisionState[] CollisionStateBuffer { get => collisionStateBuffer; }
 		[SerializeField]
 		CollisionState collisionState = CollisionState.None;
 		public CollisionState CState { get => collisionState; }
 		#endregion
+		bool boostConsumable = false;
+		bool coilConsumable = false;
+		#region Bound to 1 state
 		#region Roll State
 		bool rollRight = true;
 		float rollTimer = 0;
@@ -152,12 +155,13 @@ namespace Assets.Scripts
 		float stumbleTimer = 0;
 		float invincibleTimer = 0;
 		float coilTimer = 0;
-		bool boostConsumable = false;
-		bool coilConsumable = false;
 		#endregion
-		readonly Collider2D[] enemyCollidersOverlapped = new Collider2D[3];
-		[SerializeField] uint jumpPresses = 0;
-		public int combo = 0;
+		#endregion
+		public readonly Collider2D[] enemyCollidersOverlapped = new Collider2D[3];
+		/// <summary>
+		/// Keeps track of number of consecutive actions that have kept you aerial.
+		/// </summary>
+		public uint aerialChain = 0;
 		public uint boostMeter = 0;
 
 		[Expandable] public MovementSettings movementSettings;
@@ -166,7 +170,6 @@ namespace Assets.Scripts
 
 		// TOOD: Test aerial and grounded movement.
 		// TODO: Troubleshoot landing on enemies problem.
-		// TODO: Add combo timer
 		// TODO: Tweak wall run
 		// TODO: Check for refactors from Velocity to Cached Velocity.
 		// TODO: Add boost run
@@ -175,18 +178,39 @@ namespace Assets.Scripts
 		// TODO: Switch from physics-based movement to scripted movement?
 		// TODO: Expand compatible states (i.e. falling and coiling, jumping and invincible).
 		// TODO: Add toggleable state machine testing.
+		// TODO: Figure out immediate double jump taps.
+		// TODO: Expand Aerial Chain updates.
+		// TODO: Display aerial chain
 		void FixedUpdate()
 		{
-			#region Debug Jump Checks
-			//if (JumpPressedOnThisFrame)
-			//{
-			//	jumpPresses++;
-			//	Debug.Log($"JumpPressedOnThisFrame");
-			//}
-			//Debug.Log($"Presses: {jumpPresses}");
+			_ctx.UpdateStates_DEBUG();
+			//DirectStateManagement();
+
+			#region After state is handled
+			// Change Cam Size
+			//myCam.m_Lens.OrthographicSize = cameraSettings.isOrthographicSizeFunctionActive ? 
+			//	cameraSettings.GetTargetOrthographicSize(Velocity, transform.position, GlobalConstants.GroundLayer) :
+			//	cameraSettings.defaultOrthographicSize;
+			cameraSettings.UpdateCamera(myCam, /*Velocity, */transform.position, GlobalConstants.GroundLayer);
+
+			// Update speed display after application of forces.
+			UpdateSpeedText();
+
+			// Update messages for opacity.
+			UpdateUIMessages(Time.fixedDeltaTime);
+
+			// Reset jump/boost inputs
+			jumpButton		.AdvanceToNextFrame/*_DEBUG*/();
+			boostButton		.AdvanceToNextFrame/*_DEBUG*/();
+			downActionButton.AdvanceToNextFrame/*_DEBUG*/();
+
+			cachedVelocity = preCollisionVelocity = Velocity;
 			#endregion
+		}
+
+		void DirectStateManagement()
+		{
 			#region Methods
-			// TOOD: Factor in aerial and grounded constant move force.
 			Vector2 BasicMovement(Vector2 moveForce)
 			{
 				var moveVector = input.FindAction("Move").ReadValue<Vector2>();
@@ -199,7 +223,7 @@ namespace Assets.Scripts
 					transform.position += (Vector3)movementSettings.constantMovementDisplacement * Time.fixedDeltaTime;
 				}
 				else
-					rb.AddForce(Vector2.Scale(moveVector, moveForce/*movementSettings.moveForce*/));
+					rb.AddForce(Vector2.Scale(moveVector, moveForce));
 				return moveVector;
 			}
 			#region Coil State
@@ -211,6 +235,8 @@ namespace Assets.Scripts
 				coilTimer = movementSettings.coilTimerLength;
 				coilConsumable = false;
 				AddUIMessage("Coil Jump");
+				// TODO: Only have aerial chain increment if coiling avoided a collsion.
+				UpdateAerialChain(1);
 			}
 			void UpdateCoilState()
 			{
@@ -220,7 +246,6 @@ namespace Assets.Scripts
 					ExitCoiling();
 					return;
 				}
-				//moveVector = moveVector.IsFinite() ? moveVector : BasicMovement();
 				coilTimer -= Time.fixedDeltaTime;
 				// TODO: Apply DRY to following 2 ifs
 				if (collisionState.HasFlag(CollisionState.EnemyCollider) && !movementState.HasFlag(MovementState.Invincible))
@@ -277,8 +302,8 @@ namespace Assets.Scripts
 				//moveVector = moveVector.IsFinite() ? moveVector : BasicMovement(moveForceAerial);
 				invincibleTimer -= Time.fixedDeltaTime;
 				if (invincibleTimer <= 0f ||
-						(rb.OverlapCollider(GlobalConstants.EnemyLayer, enemyCollidersOverlapped) <= 0 &&
-						collisionState.HasFlag(CollisionState.Ground)))
+					(rb.OverlapCollider(GlobalConstants.EnemyLayer, enemyCollidersOverlapped) <= 0 &&
+					collisionState.HasFlag(CollisionState.Ground)))
 					ExitInvincible();
 			}
 			void ExitInvincible()
@@ -316,7 +341,6 @@ namespace Assets.Scripts
 					rb.velocity = new(movementSettings.rollExitSpeed * (rollRight ? 1 : -1), Velocity.y);
 
 					ExitRolling();
-					//movementState |= MovementState.Grounded;
 					return;
 				}
 				else
@@ -336,6 +360,7 @@ namespace Assets.Scripts
 					}
 					var h = GetRollHeightAtTime(rollTimer);
 
+					// TOOD: Roll displacement prevention is jittery, tweak
 					// Stop roll shrink from making player airborne
 					//transform.position = new(transform.position.x, transform.position.y - colliderInitialDimensions.y * .5f, transform.position.z);
 					var delta = MyCapsule.size.y - h;
@@ -350,6 +375,11 @@ namespace Assets.Scripts
 			}
 			void ExitRolling()
 			{
+				// TOOD: Roll displacement prevention is jittery, tweak
+				// Stop roll shrink from making player airborne
+				//transform.position = new(transform.position.x, transform.position.y - colliderInitialDimensions.y * .5f, transform.position.z);
+				var delta = MyCapsule.size.y - colliderInitialDimensions.y;
+				transform.position = new(transform.position.x, transform.position.y - delta, transform.position.z);
 				MyCapsule.size = colliderInitialDimensions;
 
 				// TODO: Remove when using animations
@@ -360,7 +390,7 @@ namespace Assets.Scripts
 				movementState ^= MovementState.Rolling;
 			}
 			#endregion
-			#region Enter State
+			#region Stumble State
 			void EnterStumble()
 			{
 				movementState |= MovementState.Stumbling;
@@ -373,7 +403,6 @@ namespace Assets.Scripts
 				damageIndicator.Show(movementSettings.stumbleTimerLength);
 				impulseSource?.GenerateImpulseAt(transform.position, /*Velocity*/CachedVelocity);
 				AddUIMessage("Stumbled...");
-				combo = 0;
 				ResetBoostMeter();
 				UpdateScore(-100);
 				var c = spriteRenderer.color;
@@ -404,6 +433,19 @@ namespace Assets.Scripts
 
 				startLifetime.constant = origStartLifetimeConstant;
 				m.startLifetime = startLifetime;
+			}
+			void UpdateStumbling()
+			{
+				stumbleTimer -= Time.fixedDeltaTime;
+				if (stumbleTimer <= 0f)
+					ExitStumbling();
+			}
+			void ExitStumbling()
+			{
+				AddUIMessage("Back up!");
+				EnterInvincible();
+				EnterGrounded();
+				movementState ^= MovementState.Stumbling;
 			}
 			#endregion
 			void EnterWallrunning()
@@ -454,9 +496,9 @@ namespace Assets.Scripts
 			}
 			bool TryBoostJumping(Vector2 moveVector)
 			{
-				if (JumpPressedOnThisFrame && 
-					input.IsPressed("Boost") && 
-					boostConsumable && 
+				if (jumpButton.InputPressedOnThisFrame &&
+					input.IsPressed("Boost") &&
+					boostConsumable &&
 					boostMeter >= movementSettings.boostJumpCost)
 				{
 					// If falling, zero out vertical velocity so the jump isn't fighting the downward momentum.
@@ -477,8 +519,8 @@ namespace Assets.Scripts
 			}
 			#endregion
 			Vector2 moveVector = Vector2.positiveInfinity;
-			Vector2 moveForceGround  = (movementSettings.isAerialAndGroundedMovementUnique) ? movementSettings.moveForceGround  : movementSettings.moveForce;
-			Vector2 moveForceAerial  = (movementSettings.isAerialAndGroundedMovementUnique) ? movementSettings.moveForceAerial  : movementSettings.moveForce;
+			Vector2 moveForceGround = (movementSettings.isAerialAndGroundedMovementUnique) ? movementSettings.moveForceGround : movementSettings.moveForce;
+			Vector2 moveForceAerial = (movementSettings.isAerialAndGroundedMovementUnique) ? movementSettings.moveForceAerial : movementSettings.moveForce;
 			Vector2 moveForceWallrun = (movementSettings.isAerialAndGroundedMovementUnique) ? movementSettings.moveForceWallrun : movementSettings.moveForce;
 			switch (movementState)
 			{
@@ -486,30 +528,34 @@ namespace Assets.Scripts
 				case MovementState.Grounded:
 				{
 					if (movementState.HasFlag(MovementState.Rolling))
-						goto case MovementState.Rolling;
-					moveVector = moveVector.IsFinite() ? moveVector : BasicMovement(moveForceGround);
-					// TODO: Debug running sound & particle effect start and stop.
-					// TODO: Combine this collisionState.HasFlag(CollisionState.Ground) check with the next one.
-					if (collisionState.HasFlag(CollisionState.Ground))
+						UpdateRolling();//goto case MovementState.Rolling;
+										// Ground Specific
+					else
 					{
-						if (Velocity.x != 0)
+						moveVector = moveVector.IsFinite() ? moveVector : BasicMovement(moveForceGround);
+						// TODO: Debug running sound & particle effect start and stop.
+						// TODO: Combine this collisionState.HasFlag(CollisionState.Ground) check with the next one.
+						if (collisionState.HasFlag(CollisionState.Ground))
 						{
-							if (!aSource.isPlaying)
-								aSource.Play();
-							if (!particleSystem.isPlaying)
-								particleSystem.Play();
+							if (Velocity.x != 0)
+							{
+								if (!aSource.isPlaying)
+									aSource.Play();
+								if (!particleSystem.isPlaying)
+									particleSystem.Play();
+							}
+							else if (Velocity.x == 0)
+							{
+								if (aSource.isPlaying)
+									aSource.Stop();
+								if (particleSystem.isPlaying)
+									particleSystem.Stop();
+							}
 						}
-						else if (Velocity.x == 0)
-						{
-							if (aSource.isPlaying)
-								aSource.Stop();
-							if (particleSystem.isPlaying)
-								particleSystem.Stop();
-						}
+						//Debug.Log($"isPlaying:{aSource.isPlaying}");
 					}
-					//Debug.Log($"isPlaying:{aSource.isPlaying}");
-					if (!collisionState.HasFlag(CollisionState.Ground) && 
-						!collisionState.HasFlag(CollisionState.EnemyCollider))// work on killing enemy collider as valid grounded state.
+					if (!collisionState.HasFlag(CollisionState.Ground) &&
+						!collisionState.HasFlag(CollisionState.EnemyCollider))// TODO: work on removing enemy collider as valid grounded state.
 					{
 						ExitGrounded();
 						movementState |= MovementState.Falling;
@@ -519,7 +565,7 @@ namespace Assets.Scripts
 						ExitGrounded();
 						EnterStumble();
 					}
-					else if (JumpPressedOnThisFrame)
+					else if (jumpButton.InputPressedOnThisFrame && movementState.IsInJumpableState())
 					{
 						ExitGrounded();
 						EnterJumping(moveVector);
@@ -564,13 +610,13 @@ namespace Assets.Scripts
 						movementState ^= MovementState.Jumping;
 						movementState |= MovementState.Falling;
 					}
-					else if (collisionState.HasFlag(CollisionState.BGWall) && JumpPressedOnThisFrame && Velocity.x != 0)
+					else if (collisionState.HasFlag(CollisionState.BGWall) && jumpButton.InputPressedOnThisFrame && Velocity.x != 0)
 						EnterWallrunning();
-					if  ((movementState.HasFlag(MovementState.Jumping) || movementState.HasFlag(MovementState.Falling)) &&		 //If we're in the air...
+					if ((movementState.HasFlag(MovementState.Jumping) || movementState.HasFlag(MovementState.Falling)) &&        //If we're in the air...
 						!(movementState.HasFlag(MovementState.Wallrunning) || movementState.HasFlag(MovementState.Stumbling)) && //...and not wallrunning nor stumbling...
-						!TryBoostJumping(moveVector) &&																			 //...then try boost jumping. If that fails...
-						input.IsPressed(InputNames.DownAction) &&																 //...and the coil button is pressed...
-						coilConsumable &&																						 //...and we can coil...
+						!TryBoostJumping(moveVector) &&                                                                          //...then try boost jumping. If that fails...
+						input.IsPressed(InputNames.DownAction) &&                                                                //...and the coil button is pressed...
+						coilConsumable &&                                                                                        //...and we can coil...
 						PlayerDistanceFromGround() > collider.bounds.size.y)                                                     //...and we're farther than 1 bodylength from the ground...
 						EnterCoiling();
 					if (movementState.HasFlag(MovementState.Coiling))
@@ -590,8 +636,7 @@ namespace Assets.Scripts
 							EnterCoiling();
 					}
 					// TODO: If fall speed too high, force to roll?
-					// Pulled from grounded state.
-					else if (JumpPressedOnThisFrame && collisionState.HasFlag(CollisionState.EnemyTrigger)/* && Velocity.y <= 0*/)// <- Vel check should be redundant
+					else if (jumpButton.InputPressedOnThisFrame && collisionState.HasFlag(CollisionState.EnemyTrigger))
 					{
 						var vel = Velocity;
 						vel.y *= -1;
@@ -609,7 +654,6 @@ namespace Assets.Scripts
 						UpdateScore((lengthBefore - currentEnemyCollisions.Count) * 200);
 
 						AddUIMessage("Enemy Bounce");
-						combo++;
 						UpdateBoostMeter(20);
 
 						movementState ^= MovementState.Falling;
@@ -641,26 +685,7 @@ namespace Assets.Scripts
 				case var t when t.HasFlag(MovementState.Stumbling):
 				case MovementState.Stumbling:
 				{
-					stumbleTimer -= Time.fixedDeltaTime;
-					if (stumbleTimer <= 0f)
-					{
-						AddUIMessage("Back up!");
-						EnterInvincible();
-						EnterGrounded();
-						movementState ^= MovementState.Stumbling;
-					}
-					break;
-				}
-				case var t when t.HasFlag(MovementState.Invincible):
-				case MovementState.Invincible:
-				{
-					//moveVector = moveVector.IsFinite() ? moveVector : BasicMovement(moveForceAerial);
-					//invincibleTimer -= Time.fixedDeltaTime;
-					//if (invincibleTimer <= 0f ||
-					//		(rb.OverlapCollider(GlobalConstants.EnemyLayer, enemyCollidersOverlapped) <= 0 && 
-					//		collisionState.HasFlag(CollisionState.Ground)))
-					//	ExitInvincible();
-					UpdateInvincible();
+					UpdateStumbling();
 					break;
 				}
 				case var t when t.HasFlag(MovementState.Rolling):
@@ -675,40 +700,30 @@ namespace Assets.Scripts
 					UpdateCoilState();
 					break;
 				}
+				case var t when t.HasFlag(MovementState.Invincible):
+				case MovementState.Invincible:
+				{
+					Debug.LogError("Should never get here");
+					break;
+				}
 				case MovementState.None:
 				default:
 				{
-					Debug.LogWarning("Player Movement State Failure, entering Grounded State.");
-					EnterGrounded();
-					goto case MovementState.Grounded;
+					Debug.LogWarning("Player Movement State Failure, entering Falling State.");
+					//EnterGrounded();
+					//goto case MovementState.Grounded;
+					movementState |= MovementState.Falling;
+					goto case MovementState.Falling;
 				}
 			}
 			if (movementState.HasFlag(MovementState.Invincible))
 				UpdateInvincible();
 
-			Debug.Log(movementState);
+			//Debug.Log(movementState);
 
-			#region After movement is handled
-			// Change Cam Size
-			//myCam.m_Lens.OrthographicSize = cameraSettings.isOrthographicSizeFunctionActive ? 
-			//	cameraSettings.GetTargetOrthographicSize(Velocity, transform.position, GlobalConstants.GroundLayer) :
-			//	cameraSettings.defaultOrthographicSize;
-			cameraSettings.UpdateCamera(myCam, /*Velocity, */transform.position, GlobalConstants.GroundLayer);
-
-			// Update speed display after application of forces.
-			UpdateSpeedText();
-
-			// Update messages for opacity.
-			UpdateUIMessages(Time.fixedDeltaTime);
-
-			// Reset jump/boost inputs
-			jumpPressedLastFrame = jumpPressedThisFrame;
-			jumpPressedThisFrame = false;
-			boostPressedLastFrame = boostPressedThisFrame;
-			boostPressedThisFrame = false;
-
-			cachedVelocity = preCollisionVelocity = Velocity;
-			#endregion
+			// Slide new state onto buffer
+			movementStateBuffer.SlideElementsDown(movementState);
+			collisionStateBuffer.SlideElementsDown(collisionState);
 		}
 
 		#region UI Stuff
@@ -893,6 +908,36 @@ namespace Assets.Scripts
 		{
 			score = 0;
 			UpdateScore(0);
+		}
+		#endregion
+
+		// TODO: Finish Aerial Chain Methods
+		#region Aerial Chain
+
+		public void UpdateAerialChain(int delta)
+		{
+			if (delta < 0)
+				aerialChain -= (aerialChain < -delta) ? 0 - aerialChain : (uint)-delta;
+			else
+				aerialChain += (uint)delta;
+			string cText = "x";
+			if		(aerialChain >= 100000000) cText = "";
+			else if (aerialChain >= 10000000) cText = "0";
+			else if (aerialChain >= 1000000) cText = "00";
+			else if (aerialChain >= 100000) cText = "000";
+			else if (aerialChain >= 10000) cText = "0000";
+			else if (aerialChain >= 1000) cText = "00000";
+			else if (aerialChain >= 100) cText = "000000";
+			else if (aerialChain >= 10) cText = "0000000";
+			else if (aerialChain >= 1) cText = "00000000";
+			else					   cText = "00000000";
+			//scoreText.text = cText + aerialChain;
+			//Debug.Assert(scoreText.text.Length == 9);
+		}
+		public void ResetAerialChain()
+		{
+			aerialChain = 0;
+			UpdateAerialChain(0);
 		}
 		#endregion
 

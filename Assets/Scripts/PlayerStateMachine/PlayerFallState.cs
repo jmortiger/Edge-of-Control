@@ -1,5 +1,4 @@
 ﻿using Assets.Scripts.Utility;
-using System;
 using UnityEngine;
 
 namespace Assets.Scripts.PlayerStateMachine
@@ -13,25 +12,13 @@ namespace Assets.Scripts.PlayerStateMachine
 			Ctx.movementState |= MovementState.Falling;
 		}
 
-		//#region Likely Unnecessary
-		//public override void CheckSwitchState()
-		//{
-		//	throw new NotImplementedException();
-		//}
-
-		//public override void InitializeSubState()
-		//{
-		//	throw new NotImplementedException();
-		//}
-		//#endregion
-
 		public override void UpdateState()
 		{
 			Debug.Assert(Ctx.Velocity.y <= 0 || Ctx.CachedVelocity.y <= 0);
 
 			// Check Switch State
 			if ((Ctx.collisionState == CollisionState.None || Ctx.collisionState == CollisionState.BGWall) &&
-				(!TryBoostJumping(/*_ctx.moveVector*/) && Ctx.Input.IsPressed(InputNames.DownAction) && Ctx.coilConsumable))
+				(!TryBoostJumping() && Ctx.Input.IsPressed(InputNames.DownAction) && Ctx.coilConsumable))
 				SwitchState(Factory.CoilState, StateSwitchBehaviour.AllDownstream);
 			// TODO: If fall speed too high, force to roll?
 			else if (Ctx.JumpButton.InputPressedOnThisFrame && Ctx.collisionState.HasFlag(CollisionState.EnemyTrigger))
@@ -89,7 +76,7 @@ namespace Assets.Scripts.PlayerStateMachine
 			}
 		}
 
-		protected override bool TryBoostJumping()
+		protected bool TryBoostJumping()
 		{
 			if (CanBoostJump())
 			{

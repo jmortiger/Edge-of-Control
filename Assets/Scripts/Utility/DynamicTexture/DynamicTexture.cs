@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 
-namespace Assets.Scripts.Utility
+namespace Assets.Scripts.Utility.DynamicTexture
 {
 	public class DynamicTexture : MonoBehaviour
 	{

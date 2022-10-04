@@ -39,17 +39,5 @@ namespace Assets.Scripts.PlayerStateMachine
 				Ctx.collisionState.HasFlag(CollisionState.Ground)))
 				ExitState(StateSwitchBehaviour.All);
 		}
-
-		//#region Likely Unnecessary
-		//public override void CheckSwitchState()
-		//{
-		//	throw new NotImplementedException();
-		//}
-
-		//public override void InitializeSubState()
-		//{
-		//	throw new NotImplementedException();
-		//}
-		//#endregion
 	}
 }

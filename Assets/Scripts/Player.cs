@@ -127,36 +127,6 @@ namespace Assets.Scripts
 			downActionButton.Update/*_DEBUG*/(input);
 		}
 		#endregion
-		#region State
-		#region Flags
-		[SerializeField]
-		MovementState[] movementStateBuffer = new MovementState[10];
-		[SerializeField]
-		MovementState movementState = MovementState.None;
-		public MovementState MState { get => movementState; }
-		[SerializeField] CollisionState[] collisionStateBuffer = new CollisionState[10];
-		public CollisionState[] CollisionStateBuffer { get => collisionStateBuffer; }
-		[SerializeField]
-		CollisionState collisionState = CollisionState.None;
-		public CollisionState CState { get => collisionState; }
-		#endregion
-		bool boostConsumable = false;
-		bool coilConsumable = false;
-		#region Bound to 1 state
-		#region Roll State
-		bool rollRight = true;
-		float rollTimer = 0;
-		float rollInitialVx = 0;
-		#endregion
-		#region Wallrun State
-		float hangTime = 1f;
-		float wallrunStartDir = 0;
-		#endregion
-		float stumbleTimer = 0;
-		float invincibleTimer = 0;
-		float coilTimer = 0;
-		#endregion
-		#endregion
 		public readonly Collider2D[] enemyCollidersOverlapped = new Collider2D[3];
 		/// <summary>
 		/// Keeps track of number of consecutive actions that have kept you aerial.
@@ -176,7 +146,6 @@ namespace Assets.Scripts
 		// TODO: Add auditory feedback for fatal/damaging falls (like Mirror's Edge).
 		// TODO: Add 2-stage jump w/ 2nd stage having increased gravity (https://youtu.be/ep_9RtAbwog?t=154)
 		// TODO: Switch from physics-based movement to scripted movement?
-		// TODO: Expand compatible states (i.e. falling and coiling, jumping and invincible).
 		// TODO: Add toggleable state machine testing.
 		// TODO: Figure out immediate double jump taps.
 		// TODO: Expand Aerial Chain updates.
@@ -208,6 +177,33 @@ namespace Assets.Scripts
 			#endregion
 		}
 
+		#region State
+		#region Flags
+		[SerializeField] MovementState[] movementStateBuffer = new MovementState[10];
+		[SerializeField] MovementState movementState = MovementState.None;
+		public MovementState MState { get => movementState; }
+		public CollisionState[] CollisionStateBuffer { get => collisionStateBuffer; }
+		[SerializeField] CollisionState[] collisionStateBuffer = new CollisionState[10];
+		[SerializeField] CollisionState collisionState = CollisionState.None;
+		public CollisionState CState { get => collisionState; }
+		#endregion
+		bool boostConsumable = false;
+		bool coilConsumable = false;
+		#region Bound to 1 state
+		#region Roll State
+		bool rollRight = true;
+		float rollTimer = 0;
+		float rollInitialVx = 0;
+		#endregion
+		#region Wallrun State
+		float hangTime = 1f;
+		float wallrunStartDir = 0;
+		#endregion
+		float stumbleTimer = 0;
+		float invincibleTimer = 0;
+		float coilTimer = 0;
+		#endregion
+		#endregion
 		void DirectStateManagement()
 		{
 			#region Methods

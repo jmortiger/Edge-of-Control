@@ -2,7 +2,7 @@
 using UnityEngine;
 using UnityEngine.Events;
 
-namespace Assets.Scripts.Utility
+namespace Assets.Scripts.Utility.DynamicTexture
 {
 	[CreateAssetMenu(fileName = "dtm_StaticMode0", menuName = "Scriptable Object/Dynamic Texture Mode/Static Mode")]
 	public class StaticMode : DynamicTextureMode

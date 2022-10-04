@@ -25,6 +25,7 @@ namespace Assets.ScriptableObjects
 
 		#region Jump Fields
 		public Vector2 jumpForce = new(.5f, 15f);
+		public Vector2 wallJumpForce = new(.5f, 5f);
 		[Tooltip("The amount of velocity conserved when jumping off enemies' heads.")]
 		[Range(0, 1)]
 		public float conservedVelocity = .8f;

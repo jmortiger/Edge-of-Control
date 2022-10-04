@@ -23,18 +23,6 @@ namespace Assets.Scripts.PlayerStateMachine
 		float wallrunStartDir = 0f;
 		#endregion
 
-		//#region Likely Unnecessary
-		//public override void CheckSwitchState()
-		//{
-		//	throw new System.NotImplementedException();
-		//}
-
-		//public override void InitializeSubState()
-		//{
-		//	throw new System.NotImplementedException();
-		//}
-		//#endregion
-
 		public override void EnterState()
 		{
 			var vel = Ctx.Velocity;
@@ -49,24 +37,26 @@ namespace Assets.Scripts.PlayerStateMachine
 			// TODO: Add wallrun sfx;
 			//aSource.PlayOneShot(sfx_group_Wallrun.GetRandomClip());
 			Ctx.movementState |= MovementState.Wallrunning;
-			Debug.Log("Entering Wallrunning");
 		}
 
 		public override void UpdateState()
 		{
 			// TODO: Add wallrun sfx;
-			// TODO: Add wall jump
-			Ctx.moveVector = Ctx.moveVector.IsFinite() ? Ctx.moveVector : Ctx.BasicMovement(Ctx.MoveForceWallrun);
+			// Check Switch States
 			if (!Ctx.collisionState.HasFlag(CollisionState.BGWall) ||
 				hangTime <= 0 ||
 				(Ctx.Velocity.x >= 0 && wallrunStartDir < 0) ||
 				(Ctx.Velocity.x <= 0 && wallrunStartDir > 0))
-			{
-				//ExitState(StateSwitchBehaviour.Self);
 				SwitchState((PlayerBaseState)null, StateSwitchBehaviour.SelfAndAllDownstream);
+			else if (Ctx.JumpButton.InputPressedOnThisFrame)
+			{
+				Factory.JumpState.JumpForce = Ctx.MvmtSettings.wallJumpForce;
+				SwitchState(new PlayerBaseState[] { Factory.JumpState }, StateSwitchBehaviour.All);
 			}
+			// Update
 			else
 			{
+				Ctx.moveVector = Ctx.moveVector.IsFinite() ? Ctx.moveVector : Ctx.BasicMovement(Ctx.MoveForceWallrun);
 				// Counter gravity
 				Ctx.Rb.AddForce(Physics2D.gravity * -1);
 				Ctx.Rb.AddForce(new(0, hangTime));

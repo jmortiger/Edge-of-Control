@@ -6,19 +6,22 @@ namespace Assets.Scripts.PlayerStateMachine
 	public class PlayerJumpState : PlayerBaseState
 	{
 		public PlayerJumpState(PlayerStateMachineContext ctx, PlayerStateFactory factory) 
-			: base(ctx, factory, MovementState.Jumping) { }
+			: base(ctx, factory, MovementState.Jumping) { jumpForce = Ctx.MvmtSettings.jumpForce; }
 
-		//#region Likely Unnessecary
-		//public override void CheckSwitchState()
-		//{
-		//	throw new System.NotImplementedException();
-		//}
-
-		//public override void InitializeSubState()
-		//{
-		//	throw new System.NotImplementedException();
-		//}
-		//#endregion
+		private Vector2 jumpForce = Vector2.positiveInfinity;
+		/// <summary>
+		/// Allows for jumps w/ unique forces to utitilze the same state by altering the jump force applied. JUMP FORCE IS RESET TO <see cref="Ctx.MvmtSettings.jumpForce"/> ON GET.
+		/// </summary>
+		public Vector2 JumpForce
+		{
+			get
+			{
+				var t = jumpForce;
+				jumpForce = Ctx.MvmtSettings.jumpForce;
+				return t;
+			}
+			set => jumpForce = value;
+		}
 
 		public override void EnterState()
 		{
@@ -26,7 +29,8 @@ namespace Assets.Scripts.PlayerStateMachine
 			if (!Ctx.moveVector.IsFinite())
 				moveVector = Ctx.GetMoveVector();
 			moveVector.y = 1;
-			var fApplied = Vector2.Scale(moveVector, Ctx.MvmtSettings.jumpForce);
+			var fApplied = Vector2.Scale(moveVector, /*Ctx.MvmtSettings.j*/JumpForce);
+			jumpForce = Ctx.MvmtSettings.jumpForce; // Reset jump force
 			Ctx.Rb.AddForce(fApplied, ForceMode2D.Impulse);
 			Ctx.particleSystem.Emit(30);
 			Ctx.ASource.PlayOneShot(Ctx.SFX_group_Jump.GetRandomClip());
@@ -66,7 +70,7 @@ namespace Assets.Scripts.PlayerStateMachine
 			SubState?.UpdateState();
 		}
 
-		protected override bool TryBoostJumping()
+		protected bool TryBoostJumping()
 		{
 			if (CanBoostJump())
 			{

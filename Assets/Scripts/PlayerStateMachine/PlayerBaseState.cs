@@ -23,14 +23,12 @@ namespace Assets.Scripts.PlayerStateMachine
 			ExitAction = exitAction;
 		}
 
-		//public abstract void CheckSwitchState();
-		//public abstract void InitializeSubState();
 		public abstract void EnterState();
 		public abstract void UpdateState();
 		public void ExitState(StateSwitchBehaviour behaviour = StateSwitchBehaviour.Self)
 		{
 			// TODO: Disjoint states currently don't support sub/super state.
-			if ((PlayerBaseState)Ctx.CurrentDisjointState == this && !behaviour.HasFlag(StateSwitchBehaviour.None))
+			if (Ctx.CurrentDisjointState == this && behaviour != StateSwitchBehaviour.None)
 			{
 				ExitAction?.Invoke();
 				Ctx.movementState ^= _stateFlag;
@@ -196,26 +194,26 @@ namespace Assets.Scripts.PlayerStateMachine
 					Ctx.MyPlayer.boostMeter >= Ctx.MvmtSettings.boostJumpCost;
 		}
 
-		protected virtual bool TryBoostJumping()
-		{
-			if (CanBoostJump())
-			{
-				// If falling, zero out vertical velocity so the jump isn't fighting the downward momentum.
-				if (Ctx.Velocity.y < 0)
-				{
-					var vel = Ctx.Velocity;
-					vel.y = 0;
-					Ctx.Rb.velocity = vel;
-				}
-				//aSource.Stop();// Should I do this?
-				//particleSystem.Play();// Should I do this?
-				//EnterJumping(moveVector);// Pass this responsibility off to the caller.
-				Ctx.MyPlayer.UpdateBoostMeter(-Ctx.MvmtSettings.boostJumpCost);
-				Ctx.boostConsumable = false;
-				return true;
-			}
-			return false;
-		}
+		//protected virtual bool TryBoostJumping()
+		//{
+		//	if (CanBoostJump())
+		//	{
+		//		// If falling, zero out vertical velocity so the jump isn't fighting the downward momentum.
+		//		if (Ctx.Velocity.y < 0)
+		//		{
+		//			var vel = Ctx.Velocity;
+		//			vel.y = 0;
+		//			Ctx.Rb.velocity = vel;
+		//		}
+		//		//aSource.Stop();// Should I do this?
+		//		//particleSystem.Play();// Should I do this?
+		//		//EnterJumping(moveVector);// Pass this responsibility off to the caller.
+		//		Ctx.MyPlayer.UpdateBoostMeter(-Ctx.MvmtSettings.boostJumpCost);
+		//		Ctx.boostConsumable = false;
+		//		return true;
+		//	}
+		//	return false;
+		//}
 
 		#region IEnumerable Implementation
 		public IEnumerator GetEnumerator() => new PlayerBaseStateEnumerator(this);

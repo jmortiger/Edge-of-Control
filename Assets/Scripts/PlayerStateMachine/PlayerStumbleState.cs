@@ -15,18 +15,6 @@ namespace Assets.Scripts.PlayerStateMachine
 			: base(ctx, factory, MovementState.Stumbling) { ExitAction = ExitStumbling; }
 		#endregion
 
-		//#region Likely Unnessecary
-		//public override void CheckSwitchState()
-		//{
-		//	throw new NotImplementedException();
-		//}
-
-		//public override void InitializeSubState()
-		//{
-		//	throw new NotImplementedException();
-		//}
-		//#endregion
-
 		#region State
 		float stumbleTimer = 0;
 		#endregion

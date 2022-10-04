@@ -5,26 +5,28 @@ namespace Assets.Scripts.PlayerStateMachine
 {
 	public class PlayerCoilState : PlayerBaseState
 	{
-		#region Ctor
-		void ExitCoil()
+		public PlayerCoilState(PlayerContext ctx, PlayerStateFactory factory) : base(ctx, factory, MovementState.Coiling)
 		{
-			Ctx.MyPlayer.MyCapsule.size = Ctx.MyPlayer.colliderInitialDimensions;
+			void ExitCoil()
+			{
+				Ctx.MyPlayer.MyCapsule.size = Ctx.MyPlayer.colliderInitialDimensions;
 
-			// TODO: Remove when using animations
-			//var srb = spriteRenderer.bounds;
-			//srb.size = rendererInitialDimensions;//new Vector3(colliderInitialDimensions.x, colliderInitialDimensions.y, srb.size.z);
-			//spriteRenderer.bounds = srb;
+				// TODO: Remove when using animations
+				//var srb = spriteRenderer.bounds;
+				//srb.size = rendererInitialDimensions;//new Vector3(colliderInitialDimensions.x, colliderInitialDimensions.y, srb.size.z);
+				//spriteRenderer.bounds = srb;
 
-			//_ctx.movementState ^= MovementState.Coiling;
-			coilTimer = 0;
+				//_ctx.movementState ^= MovementState.Coiling;
+				coilTimer = 0;
+			}
+			ExitAction = ExitCoil;
 		}
-		public PlayerCoilState(PlayerStateMachineContext ctx, PlayerStateFactory factory) : base(ctx, factory, MovementState.Coiling) { ExitAction = ExitCoil; }
-		#endregion
 
 		#region State
 		float coilTimer = 0;
 		#endregion
 
+		#region Abstract Method Implementations
 		public override void EnterState()
 		{
 			Debug.Assert(!Ctx.movementState.HasFlag(MovementState.Coiling));
@@ -79,5 +81,6 @@ namespace Assets.Scripts.PlayerStateMachine
 				//spriteRenderer.bounds = srb;
 			}
 		}
+		#endregion
 	}
 }

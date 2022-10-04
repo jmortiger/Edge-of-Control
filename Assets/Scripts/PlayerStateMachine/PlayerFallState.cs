@@ -5,8 +5,9 @@ namespace Assets.Scripts.PlayerStateMachine
 {
 	public class PlayerFallState : PlayerBaseState
 	{
-		public PlayerFallState(PlayerStateMachineContext ctx, PlayerStateFactory factory) : base(ctx, factory, MovementState.Falling) { }
+		public PlayerFallState(PlayerContext ctx, PlayerStateFactory factory) : base(ctx, factory, MovementState.Falling) { }
 
+		#region Abstract Method Implementations
 		public override void EnterState()
 		{
 			Ctx.movementState |= MovementState.Falling;
@@ -19,7 +20,7 @@ namespace Assets.Scripts.PlayerStateMachine
 			// Check Switch State
 			if ((Ctx.collisionState == CollisionState.None || Ctx.collisionState == CollisionState.BGWall) &&
 				(!TryBoostJumping() && Ctx.Input.IsPressed(InputNames.DownAction) && Ctx.coilConsumable))
-				SwitchState(Factory.CoilState, StateSwitchBehaviour.AllDownstream);
+				SwitchState(Factory.CoilState, StateSwitchBehaviour.Downstream);
 			// TODO: If fall speed too high, force to roll?
 			else if (Ctx.JumpButton.InputPressedOnThisFrame && Ctx.collisionState.HasFlag(CollisionState.EnemyTrigger))
 			{
@@ -53,8 +54,8 @@ namespace Assets.Scripts.PlayerStateMachine
 
 			//}
 			else if (
-				((Ctx.collisionState.HasFlag(CollisionState.Ground) && Ctx.CachedVelocity.y < Ctx.MvmtSettings.maxSafeFallSpeed) || 
-				Ctx.collisionState.HasFlag(CollisionState.EnemyCollider)) && 
+				((Ctx.collisionState.HasFlag(CollisionState.Ground) && Ctx.CachedVelocity.y < Ctx.MvmtSettings.maxSafeFallSpeed) ||
+				Ctx.collisionState.HasFlag(CollisionState.EnemyCollider)) &&
 					!Ctx.movementState.HasFlag(MovementState.Invincible))
 			{
 				if (Ctx.Input.IsPressed(InputNames.DownAction))
@@ -75,6 +76,7 @@ namespace Assets.Scripts.PlayerStateMachine
 				SubState?.UpdateState();
 			}
 		}
+		#endregion
 
 		protected bool TryBoostJumping()
 		{
@@ -89,7 +91,7 @@ namespace Assets.Scripts.PlayerStateMachine
 				}
 				//aSource.Stop();// Should I do this?
 				//particleSystem.Play();// Should I do this?
-				SwitchState(Factory.JumpState, StateSwitchBehaviour.SelfAndAllDownstream);
+				SwitchState(Factory.JumpState, StateSwitchBehaviour.SelfAndDownstream);
 				Ctx.MyPlayer.UpdateBoostMeter(-Ctx.MvmtSettings.boostJumpCost);
 				Ctx.boostConsumable = false;
 				return true;

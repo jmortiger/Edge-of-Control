@@ -1,19 +1,22 @@
 ﻿using Assets.Scripts.Utility;
-using System;
 
 namespace Assets.Scripts.PlayerStateMachine
 {
 	public class PlayerGroundState : PlayerBaseState
 	{
-		private void GroundExitAction()
+		public PlayerGroundState(PlayerContext ctx, PlayerStateFactory factory) 
+			: base(ctx, factory, MovementState.Grounded)
 		{
-			Ctx.ASource.Stop();
-			Ctx.particleSystem.Stop(/*false, ParticleSystemStopBehavior.StopEmitting*/);
-			//_ctx.movementState ^= MovementState.Grounded;
+			void GroundExitAction()
+			{
+				Ctx.ASource.Stop();
+				Ctx.particleSystem.Stop(/*false, ParticleSystemStopBehavior.StopEmitting*/);
+				//_ctx.movementState ^= MovementState.Grounded;
+			}
+			ExitAction = GroundExitAction;
 		}
-		public PlayerGroundState(PlayerStateMachineContext ctx, PlayerStateFactory factory) 
-			: base(ctx, factory, MovementState.Grounded) { ExitAction = GroundExitAction; }
 
+		#region Abstract Method Implementations
 		public override void EnterState()
 		{
 			Ctx.movementState |= MovementState.Grounded;
@@ -77,5 +80,6 @@ namespace Assets.Scripts.PlayerStateMachine
 				SubState?.UpdateState();
 			}
 		}
+		#endregion
 	}
 }

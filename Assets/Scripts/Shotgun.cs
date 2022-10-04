@@ -15,6 +15,7 @@ namespace Assets.Scripts
 		#endregion
 
 		#region Settings
+		// TODO: Pull into ScriptableObject.
 		public float fireRateLength = 1f;
 		public GameObject pellet;
 		//public Vector2 projectileSpawnOffset = new(.5f, 0);
@@ -44,7 +45,6 @@ namespace Assets.Scripts
 				pelletsQueuedPositions[i] = Vector3.positiveInfinity;
 			pelletTrailMats = new Material[shotgunPelletNumber];
 			pellets = new GameObject[shotgunPelletNumber];
-			Debug.Log(pellets.Length);
 			for (int i = 0; i < pellets.Length; i++)
 			{
 				pellets[i] = Instantiate(pellet, Vector3.zero, Quaternion.identity);
@@ -163,6 +163,5 @@ namespace Assets.Scripts
 #endif
 			}
 		}
-
 	}
 }

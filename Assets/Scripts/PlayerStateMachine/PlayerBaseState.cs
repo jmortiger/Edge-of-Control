@@ -9,13 +9,13 @@ namespace Assets.Scripts.PlayerStateMachine
 		#region Fields
 		private readonly MovementState _stateFlag;
 		protected PlayerStateFactory Factory { get; private set; }
-		protected PlayerStateMachineContext Ctx { get; private set; }
-		protected Action ExitAction { get; set; }
+		protected PlayerContext Ctx { get; private set; }
+		protected Action ExitAction { get; init; }
 		public PlayerBaseState SuperState { get; protected set; }
 		public PlayerBaseState SubState { get; protected set; }
 		#endregion
 
-		public PlayerBaseState(PlayerStateMachineContext ctx, PlayerStateFactory factory, MovementState stateFlag, Action exitAction = null)
+		public PlayerBaseState(PlayerContext ctx, PlayerStateFactory factory, MovementState stateFlag, Action exitAction = null)
 		{
 			Ctx = ctx;
 			Factory = factory;
@@ -25,10 +25,25 @@ namespace Assets.Scripts.PlayerStateMachine
 
 		public abstract void EnterState();
 		public abstract void UpdateState();
+		public virtual void ReinitializeState()
+		{
+			SuperState = null;
+			SubState = null;
+		}
 		public void ExitState(StateSwitchBehaviour behaviour = StateSwitchBehaviour.Self)
 		{
-			// TODO: Disjoint states currently don't support sub/super state.
-			if (Ctx.CurrentDisjointState == this && behaviour != StateSwitchBehaviour.None)
+			if (behaviour != StateSwitchBehaviour.None && (
+					behaviour.HasFlag(StateSwitchBehaviour.Self) || 
+					behaviour.HasFlag(StateSwitchBehaviour.SelfAndDownstream) || 
+					behaviour.HasFlag(StateSwitchBehaviour.All) || (
+						behaviour.HasFlag(StateSwitchBehaviour.AllButBase) && 
+						this != Ctx.CurrentBaseState && 
+						this != Ctx.CurrentDisjointState)))
+				Debug.Assert(Ctx.movementState.HasFlag(_stateFlag), $"Exiting a state that's not active.");
+			// TODO: Disjoint states currently don't support sub/super states.
+			if (Ctx.CurrentDisjointState == this &&
+				behaviour != StateSwitchBehaviour.None &&
+				(behaviour.HasFlag(StateSwitchBehaviour.Self) || behaviour.HasFlag(StateSwitchBehaviour.SelfAndDownstream) || behaviour.HasFlag(StateSwitchBehaviour.All)))
 			{
 				ExitAction?.Invoke();
 				Ctx.movementState ^= _stateFlag;
@@ -44,26 +59,27 @@ namespace Assets.Scripts.PlayerStateMachine
 					ExitAction?.Invoke();
 					Ctx.movementState ^= _stateFlag;
 					SuperState = null;
-					SubState = null;
+					// TODO: Have SelfAndAllDownstream fallthrough here.
+					/*if (behaviour.HasFlag())*/ SubState = null;
 					break;
 				}
-				case StateSwitchBehaviour.SelfAndAllDownstream:
+				case StateSwitchBehaviour.SelfAndDownstream:
 				{
 					ExitAction?.Invoke();
 					Ctx.movementState ^= _stateFlag;
 					SuperState = null;
-					goto case StateSwitchBehaviour.AllDownstream;
+					goto case StateSwitchBehaviour.Downstream;
 				}
-				case StateSwitchBehaviour.AllDownstream:
+				case StateSwitchBehaviour.Downstream:
 				{
-					SubState?.ExitState(StateSwitchBehaviour.SelfAndAllDownstream);
+					SubState?.ExitState(StateSwitchBehaviour.SelfAndDownstream);
 					SubState = null;
 					break;
 				}
 				case StateSwitchBehaviour.AllButBase:
 				{
 					if (SuperState == null) // If this is the root
-						goto case StateSwitchBehaviour.AllDownstream;
+						goto case StateSwitchBehaviour.Downstream;
 					else // If this isn't the root
 						SuperState.ExitState(behaviour); // Pass up the chain, so they can tell substates to kill downstream
 					break;
@@ -71,7 +87,7 @@ namespace Assets.Scripts.PlayerStateMachine
 				case StateSwitchBehaviour.All:
 				{
 					if (SuperState == null) // If this is the root
-						goto case StateSwitchBehaviour.SelfAndAllDownstream;
+						goto case StateSwitchBehaviour.SelfAndDownstream;
 					else // If this isn't the root
 						SuperState.ExitState(behaviour); // Pass up the chain, so they can tell substates to kill downstream
 					break;
@@ -90,9 +106,9 @@ namespace Assets.Scripts.PlayerStateMachine
 		/// <summary>
 		/// 
 		/// </summary>
-		/// <param name="newState">The state to switch to.</param>
+		/// <param name="newState">The state to switch to. Can pass in null to correctly change the pointers to this state in the super/sub states, which <see cref="ExitState(StateSwitchBehaviour)"/> doesn't do.</param>
 		/// <param name="behaviour"></param>
-		protected void SwitchState(PlayerBaseState newState, StateSwitchBehaviour behaviour = StateSwitchBehaviour.SelfAndAllDownstream)
+		protected void SwitchState(PlayerBaseState newState, StateSwitchBehaviour behaviour = StateSwitchBehaviour.SelfAndDownstream)
 		{
 			// Reconfigure sub/super states
 			switch (behaviour)
@@ -105,9 +121,9 @@ namespace Assets.Scripts.PlayerStateMachine
 						if (newState != null)
 							newState.SubState = SubState;
 					}
-					goto case StateSwitchBehaviour.SelfAndAllDownstream;
+					goto case StateSwitchBehaviour.SelfAndDownstream;
 				}
-				case StateSwitchBehaviour.SelfAndAllDownstream:
+				case StateSwitchBehaviour.SelfAndDownstream:
 				{
 					if (SuperState != null)
 					{
@@ -119,7 +135,7 @@ namespace Assets.Scripts.PlayerStateMachine
 						Ctx.CurrentBaseState = newState;
 					break;
 				}
-				case StateSwitchBehaviour.AllDownstream:
+				case StateSwitchBehaviour.Downstream:
 				{
 					if (newState != null)
 						newState.SuperState = this;
@@ -133,7 +149,7 @@ namespace Assets.Scripts.PlayerStateMachine
 						return;
 					}
 					else
-						goto case StateSwitchBehaviour.SelfAndAllDownstream;
+						goto case StateSwitchBehaviour.SelfAndDownstream;
 				}
 				case StateSwitchBehaviour.AllButBase:
 				{
@@ -143,7 +159,7 @@ namespace Assets.Scripts.PlayerStateMachine
 						return;
 					}
 					else
-						goto case StateSwitchBehaviour.AllDownstream;
+						goto case StateSwitchBehaviour.Downstream;
 				}
 				case StateSwitchBehaviour.None:
 				default:
@@ -153,30 +169,36 @@ namespace Assets.Scripts.PlayerStateMachine
 				}
 			}
 			ExitState(behaviour); // ExitState clears sub & super state references, must go after reconfig above.
-			if (behaviour == StateSwitchBehaviour.AllDownstream) // Needs to be here to avoid disconnection and an ExitState call in ExitState.
+			if (behaviour == StateSwitchBehaviour.Downstream) // Needs to be here to avoid disconnection and an Sub/SuperState.ExitState call in ExitState.
 				SubState = newState;
 			newState?.EnterState();
 		}
-		protected void SwitchState(PlayerBaseState[] newStates, StateSwitchBehaviour behaviour = StateSwitchBehaviour.SelfAndAllDownstream)
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="newStates">The states to switch to. Must include at least 1 non-null value.</param>
+		/// <param name="behaviour"></param>
+		/// <exception cref="ArgumentNullException"> if <paramref name="newStates"/> is null or all values in <paramref name="newStates"/> are null.</exception>
+		protected void SwitchState(PlayerBaseState[] newStates, StateSwitchBehaviour behaviour = StateSwitchBehaviour.SelfAndDownstream)
 		{
 			if (newStates != null && newStates.Length > 0)
 			{
 				// Get the index of the first element that isn't null.
-				int lastGoodIndex = 0;
-				while (newStates[lastGoodIndex] == null && lastGoodIndex < newStates.Length)
-					lastGoodIndex++;
+				int lastValidIndex = 0;
+				while (newStates[lastValidIndex] == null && lastValidIndex < newStates.Length)
+					lastValidIndex++;
 				// Switch to it if found.
-				if (lastGoodIndex < newStates.Length)
+				if (lastValidIndex < newStates.Length)
 					SwitchState(newStates[0], behaviour);
 				else
 					throw new ArgumentNullException();
 				// Do the rest.
-				for (int i = lastGoodIndex + 1; i < newStates.Length; i++)
+				for (int i = lastValidIndex + 1; i < newStates.Length; i++)
 				{
 					if (newStates[i] != null)
 					{
-						newStates[lastGoodIndex].SwitchState(newStates[i], StateSwitchBehaviour.AllDownstream);
-						lastGoodIndex = i;
+						newStates[lastValidIndex].SwitchState(newStates[i], StateSwitchBehaviour.Downstream);
+						lastValidIndex = i;
 					}
 				}
 			}
@@ -250,11 +272,11 @@ namespace Assets.Scripts.PlayerStateMachine
 		/// <summary>
 		/// Attempts to have all substates exit, while not exiting itself.
 		/// </summary>
-		AllDownstream,
+		Downstream,
 		/// <summary>
 		/// Attempts to exit itself, and have all substates exit.
 		/// </summary>
-		SelfAndAllDownstream,
+		SelfAndDownstream,
 		/// <summary>
 		/// Attempts to have all sub and super states in the chain exit, with the exception of the base state.
 		/// </summary>
@@ -263,7 +285,7 @@ namespace Assets.Scripts.PlayerStateMachine
 		/// <summary>
 		/// Attempts to have all sub and super states in the chain exit, with no exceptions.
 		/// </summary>
-		/// <remarks>Must be used with either <see cref="PlayerBaseState.SwitchState(PlayerBaseState, StateSwitchBehaviour)"/> or by manually setting the new <see cref="PlayerStateMachineContext.CurrentBaseState"/> after usage.</remarks>
+		/// <remarks>Must be used with either <see cref="PlayerBaseState.SwitchState(PlayerBaseState, StateSwitchBehaviour)"/> or by manually setting the new <see cref="PlayerContext.CurrentBaseState"/> after usage.</remarks>
 		All,
 	}
 }

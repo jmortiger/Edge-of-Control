@@ -5,10 +5,14 @@ namespace Assets.Scripts.PlayerStateMachine
 {
 	public class PlayerJumpState : PlayerBaseState
 	{
-		public PlayerJumpState(PlayerStateMachineContext ctx, PlayerStateFactory factory) 
-			: base(ctx, factory, MovementState.Jumping) { jumpForce = Ctx.MvmtSettings.jumpForce; }
+		public PlayerJumpState(PlayerContext ctx, PlayerStateFactory factory) 
+			: base(ctx, factory, MovementState.Jumping)
+		{
+			jumpForce = Ctx.MvmtSettings.jumpForce;
+		}
 
-		private Vector2 jumpForce = Vector2.positiveInfinity;
+		#region State
+		private Vector2 jumpForce;
 		/// <summary>
 		/// Allows for jumps w/ unique forces to utitilze the same state by altering the jump force applied. JUMP FORCE IS RESET TO <see cref="Ctx.MvmtSettings.jumpForce"/> ON GET.
 		/// </summary>
@@ -22,7 +26,9 @@ namespace Assets.Scripts.PlayerStateMachine
 			}
 			set => jumpForce = value;
 		}
+		#endregion
 
+		#region Abstract Method Implementations
 		public override void EnterState()
 		{
 			var moveVector = Ctx.moveVector;
@@ -47,28 +53,29 @@ namespace Assets.Scripts.PlayerStateMachine
 			}
 			else if (Ctx.Velocity.y <= 0)
 				SwitchState(Factory.FallState, StateSwitchBehaviour.Self);
-			else if (Ctx.collisionState.HasFlag(CollisionState.BGWall) && 
-					!Ctx.movementState.HasFlag(MovementState.Wallrunning) && 
-					 Ctx.JumpButton.InputPressedOnThisFrame && 
+			else if (Ctx.collisionState.HasFlag(CollisionState.BGWall) &&
+					!Ctx.movementState.HasFlag(MovementState.Wallrunning) &&
+					 Ctx.JumpButton.InputPressedOnThisFrame &&
 					 Ctx.Velocity.x != 0)
 			{
-				SwitchState(Factory.WallrunState, StateSwitchBehaviour.AllDownstream);
+				SwitchState(Factory.WallrunState, StateSwitchBehaviour.Downstream);
 				return;
 			}
 			if ((Ctx.movementState.HasFlag(MovementState.Jumping) || Ctx.movementState.HasFlag(MovementState.Falling)) &&        //If we're in the air...
 				!(Ctx.movementState.HasFlag(MovementState.Wallrunning) || Ctx.movementState.HasFlag(MovementState.Stumbling)) && //...and not wallrunning nor stumbling...
-				!TryBoostJumping() &&																							 //...then try boost jumping. If that fails...
-				Ctx.Input.IsPressed(InputNames.DownAction) &&																	 //...and the coil button is pressed...
-				Ctx.coilConsumable &&																							 //...and we can coil...
+				!TryBoostJumping() &&                                                                                            //...then try boost jumping. If that fails...
+				Ctx.Input.IsPressed(InputNames.DownAction) &&                                                                    //...and the coil button is pressed...
+				Ctx.coilConsumable &&                                                                                            //...and we can coil...
 				Ctx.MyPlayer.PlayerDistanceFromGround() > Ctx.MyPlayer.MyCapsule.bounds.size.y)                                  //...and we're farther than 1 bodylength from the ground...
 			{
 				if (SubState != null)
-					SubState.ExitState(StateSwitchBehaviour.SelfAndAllDownstream);
+					SubState.ExitState(StateSwitchBehaviour.SelfAndDownstream);
 				SubState = Factory.CoilState;
 				SubState.EnterState();
 			}
 			SubState?.UpdateState();
 		}
+		#endregion
 
 		protected bool TryBoostJumping()
 		{
@@ -83,7 +90,7 @@ namespace Assets.Scripts.PlayerStateMachine
 				}
 				//aSource.Stop();// Should I do this?
 				//particleSystem.Play();// Should I do this?
-				SubState?.ExitState(StateSwitchBehaviour.SelfAndAllDownstream);
+				SubState?.ExitState(StateSwitchBehaviour.SelfAndDownstream);
 				EnterState();
 				Ctx.MyPlayer.UpdateBoostMeter(-Ctx.MvmtSettings.boostJumpCost);
 				Ctx.boostConsumable = false;

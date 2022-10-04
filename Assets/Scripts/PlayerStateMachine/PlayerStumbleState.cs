@@ -1,28 +1,29 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace Assets.Scripts.PlayerStateMachine
 {
 	public class PlayerStumbleState : PlayerBaseState
 	{
-		#region Ctor
-		void ExitStumbling()
+		public PlayerStumbleState(PlayerContext ctx, PlayerStateFactory factory)
+			: base(ctx, factory, MovementState.Stumbling)
 		{
-			Ctx.MyPlayer.AddUIMessage("Back up!");
-			stumbleTimer = -1;
+			void ExitStumbling()
+			{
+				Ctx.MyPlayer.AddUIMessage("Back up!");
+				stumbleTimer = -1;
+			}
+			ExitAction = ExitStumbling;
 		}
-		public PlayerStumbleState(PlayerStateMachineContext ctx, PlayerStateFactory factory)
-			: base(ctx, factory, MovementState.Stumbling) { ExitAction = ExitStumbling; }
-		#endregion
 
 		#region State
 		float stumbleTimer = 0;
 		#endregion
 
+		#region Abstract Method Implementations
 		public override void EnterState()
 		{
 			Ctx.movementState |= MovementState.Stumbling;
-			/*Ctx.*/stumbleTimer = Ctx.MvmtSettings.stumbleTimerLength;
+			stumbleTimer = Ctx.MvmtSettings.stumbleTimerLength;
 			var knockback = new Vector2(-1 * Ctx./*Velocity*/CachedVelocity.x * .5f, 2);
 			Ctx.Rb.velocity = Vector2.zero;
 			//_ctx.rb.velocity = knockback;
@@ -65,8 +66,8 @@ namespace Assets.Scripts.PlayerStateMachine
 
 		public override void UpdateState()
 		{
-			/*Ctx.*/stumbleTimer -= Time.fixedDeltaTime;
-			if (/*Ctx.*/stumbleTimer <= 0f)
+			stumbleTimer -= Time.fixedDeltaTime;
+			if (stumbleTimer <= 0f)
 			{
 				// Enter Invincible
 				Ctx.CurrentDisjointState = Factory.InvincibleState;
@@ -79,5 +80,6 @@ namespace Assets.Scripts.PlayerStateMachine
 					SwitchState(Factory.FallState, StateSwitchBehaviour.All);
 			}
 		}
+		#endregion
 	}
 }

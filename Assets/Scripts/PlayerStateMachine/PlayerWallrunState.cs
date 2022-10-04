@@ -5,24 +5,26 @@ namespace Assets.Scripts.PlayerStateMachine
 {
 	public class PlayerWallrunState : PlayerBaseState
 	{
-		#region Ctor
-		void ExitWallrunning()
+		public PlayerWallrunState(PlayerContext ctx, PlayerStateFactory factory)
+			: base(ctx, factory, MovementState.Wallrunning)
 		{
-			// TODO: Add wallrun sfx;
-			Ctx.particleSystem.Stop(/*false, ParticleSystemStopBehavior.StopEmitting*/);
-			hangTime = 0;
-			wallrunStartDir = 0;
-			Debug.Log("Exiting Wallrunning");
+			void ExitWallrunning()
+			{
+				// TODO: Add wallrun sfx;
+				Ctx.particleSystem.Stop(/*false, ParticleSystemStopBehavior.StopEmitting*/);
+				hangTime = 0;
+				wallrunStartDir = 0;
+				Debug.Log("Exiting Wallrunning");
+			}
+			ExitAction = ExitWallrunning;
 		}
-		public PlayerWallrunState(PlayerStateMachineContext ctx, PlayerStateFactory factory)
-			: base(ctx, factory, MovementState.Wallrunning) { ExitAction = ExitWallrunning; }
-		#endregion
 
 		#region State
 		float hangTime = 1f;
 		float wallrunStartDir = 0f;
 		#endregion
 
+		#region Abstract Method Implementations
 		public override void EnterState()
 		{
 			var vel = Ctx.Velocity;
@@ -47,7 +49,7 @@ namespace Assets.Scripts.PlayerStateMachine
 				hangTime <= 0 ||
 				(Ctx.Velocity.x >= 0 && wallrunStartDir < 0) ||
 				(Ctx.Velocity.x <= 0 && wallrunStartDir > 0))
-				SwitchState((PlayerBaseState)null, StateSwitchBehaviour.SelfAndAllDownstream);
+				SwitchState((PlayerBaseState)null, StateSwitchBehaviour.SelfAndDownstream);
 			else if (Ctx.JumpButton.InputPressedOnThisFrame)
 			{
 				Factory.JumpState.JumpForce = Ctx.MvmtSettings.wallJumpForce;
@@ -63,5 +65,6 @@ namespace Assets.Scripts.PlayerStateMachine
 				hangTime -= Time.fixedDeltaTime;
 			}
 		}
+		#endregion
 	}
 }

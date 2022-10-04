@@ -5,12 +5,16 @@ namespace Assets.Scripts.PlayerStateMachine
 	// TODO: Implement and Integrate AerialState
 	public class PlayerAerialState : PlayerBaseState
 	{
-		private void AerialExitAction()
+		public PlayerAerialState(PlayerContext ctx, PlayerStateFactory factory) : base(ctx, factory, MovementState.Aerial)
 		{
-
+			void ExitAerial()
+			{
+				throw new NotImplementedException();
+			}
+			ExitAction = ExitAerial;
 		}
-		public PlayerAerialState(PlayerStateMachineContext ctx, PlayerStateFactory factory) : base(ctx, factory, MovementState.Aerial) { ExitAction = AerialExitAction; }
 
+		#region Abstract Method Implementations
 		public override void EnterState()
 		{
 			throw new NotImplementedException();
@@ -20,5 +24,6 @@ namespace Assets.Scripts.PlayerStateMachine
 		{
 			throw new NotImplementedException();
 		}
+		#endregion
 	}
 }

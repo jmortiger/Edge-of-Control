@@ -4,24 +4,27 @@ namespace Assets.Scripts.PlayerStateMachine
 {
 	public class PlayerRollState : PlayerBaseState
 	{
-		void ExitRolling()
+		public PlayerRollState(PlayerContext ctx, PlayerStateFactory factory)
+			: base(ctx, factory, MovementState.Rolling)
 		{
-			// TOOD: Roll displacement prevention is jittery, tweak
-			// Stop roll shrink from making player airborne
-			//_ctx.transform.position = new(_ctx.transform.position.x, _ctx.transform.position.y - _ctx.MyPlayer.colliderInitialDimensions.y * .5f, _ctx.transform.position.z);
-			var delta = Ctx.MyPlayer.MyCapsule.size.y - Ctx.MyPlayer.colliderInitialDimensions.y;
-			Ctx.PlayerTransform.position = new(Ctx.PlayerTransform.position.x, Ctx.PlayerTransform.position.y - delta, Ctx.PlayerTransform.position.z);
-			Ctx.MyPlayer.MyCapsule.size = Ctx.MyPlayer.colliderInitialDimensions;
+			void ExitRolling()
+			{
+				// TOOD: Roll displacement prevention is jittery, tweak
+				// Stop roll shrink from making player airborne
+				//_ctx.transform.position = new(_ctx.transform.position.x, _ctx.transform.position.y - _ctx.MyPlayer.colliderInitialDimensions.y * .5f, _ctx.transform.position.z);
+				var delta = Ctx.MyPlayer.MyCapsule.size.y - Ctx.MyPlayer.colliderInitialDimensions.y;
+				Ctx.PlayerTransform.position = new(Ctx.PlayerTransform.position.x, Ctx.PlayerTransform.position.y - delta, Ctx.PlayerTransform.position.z);
+				Ctx.MyPlayer.MyCapsule.size = Ctx.MyPlayer.colliderInitialDimensions;
 
-			// TODO: Remove when using animations
-			//var srb = spriteRenderer.bounds;
-			//srb.size = rendererInitialDimensions;//new Vector3(colliderInitialDimensions.x, colliderInitialDimensions.y, srb.size.z);
-			//spriteRenderer.bounds = srb;
+				// TODO: Remove when using animations
+				//var srb = spriteRenderer.bounds;
+				//srb.size = rendererInitialDimensions;//new Vector3(colliderInitialDimensions.x, colliderInitialDimensions.y, srb.size.z);
+				//spriteRenderer.bounds = srb;
 
-			//_ctx.movementState ^= MovementState.Rolling;
+				//_ctx.movementState ^= MovementState.Rolling;
+			}
+			ExitAction = ExitRolling;
 		}
-		public PlayerRollState(PlayerStateMachineContext ctx, PlayerStateFactory factory)
-			: base(ctx, factory, MovementState.Rolling) { ExitAction = ExitRolling; }
 
 		#region State
 		bool rollRight = true;
@@ -29,6 +32,7 @@ namespace Assets.Scripts.PlayerStateMachine
 		float rollInitialVx = 0;
 		#endregion
 
+		#region Abstract Method Implementations
 		public override void EnterState()
 		{
 			Ctx.movementState |= MovementState.Rolling;
@@ -86,5 +90,6 @@ namespace Assets.Scripts.PlayerStateMachine
 				//spriteRenderer.bounds = srb;
 			}
 		}
+		#endregion
 	}
 }

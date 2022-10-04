@@ -1,28 +1,29 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace Assets.Scripts.PlayerStateMachine
 {
 	public class PlayerInvincibleState : PlayerBaseState
 	{
+		public PlayerInvincibleState(PlayerContext ctx, PlayerStateFactory factory)
+			: base(ctx, factory, MovementState.Invincible)
+		{
+			void ExitInvincible()
+			{
+				Debug.Log("Exiting Invincible");
+				var c = Ctx.MyPlayer.SRenderer.color;
+				c.a = 1f;
+				Ctx.MyPlayer.SRenderer.color = c;
+				Physics2D.IgnoreLayerCollision(LayerMask.NameToLayer("Default"), LayerMask.NameToLayer("Enemy"), false);
+				invincibleTimer = -1;
+			}
+			ExitAction = ExitInvincible;
+		}
+
 		#region State
 		float invincibleTimer;
 		#endregion
 
-		#region Ctor
-		void ExitInvincible()
-		{
-			Debug.Log("Exiting Invincible");
-			var c = Ctx.MyPlayer.SRenderer.color;
-			c.a = 1f;
-			Ctx.MyPlayer.SRenderer.color = c;
-			Physics2D.IgnoreLayerCollision(LayerMask.NameToLayer("Default"), LayerMask.NameToLayer("Enemy"), false);
-			invincibleTimer = -1;
-		}
-		public PlayerInvincibleState(PlayerStateMachineContext ctx, PlayerStateFactory factory)
-			: base(ctx, factory, MovementState.Invincible) { ExitAction = ExitInvincible; }
-		#endregion
-
+		#region Abstract Method Implementations
 		public override void EnterState()
 		{
 			Debug.Log("Entering Invincible");
@@ -39,5 +40,6 @@ namespace Assets.Scripts.PlayerStateMachine
 				Ctx.collisionState.HasFlag(CollisionState.Ground)))
 				ExitState(StateSwitchBehaviour.All);
 		}
+		#endregion
 	}
 }

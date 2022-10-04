@@ -54,8 +54,7 @@ namespace Assets.Scripts
 		[Expandable]
 		public CameraSettings cameraSettings;
 		#endregion
-		PlayerStateMachineContext _ctx;
-		PlayerStateFactory _factory;
+		PlayerContext _ctx;
 		[ContextMenu("Assign Scene References")]
 		void AssignSceneReferences()
 		{
@@ -109,9 +108,7 @@ namespace Assets.Scripts
 			colliderInitialDimensions = collider.bounds.size;
 			//rendererInitialDimensions = spriteRenderer.bounds.size;
 
-			_ctx = new PlayerStateMachineContext(this);
-			_factory = new PlayerStateFactory(_ctx);
-			_ctx.CurrentBaseState = _factory.GroundState;
+			(_ctx, _) = PlayerContext.CreateStateMachine(this, true);
 		}
 		#endregion
 

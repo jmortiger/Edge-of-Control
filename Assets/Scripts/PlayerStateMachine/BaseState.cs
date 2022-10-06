@@ -4,18 +4,18 @@ using UnityEngine;
 
 namespace Assets.Scripts.PlayerStateMachine
 {
-	public abstract class PlayerBaseState : IEnumerable
+	public abstract class BaseState : IEnumerable
 	{
 		#region Fields
 		private readonly MovementState _stateFlag;
-		protected PlayerStateFactory Factory { get; private set; }
+		protected StateFactory Factory { get; private set; }
 		protected PlayerContext Ctx { get; private set; }
 		protected Action ExitAction { get; init; }
-		public PlayerBaseState SuperState { get; protected set; }
-		public PlayerBaseState SubState { get; protected set; }
+		public BaseState SuperState { get; protected set; }
+		public BaseState SubState { get; protected set; }
 		#endregion
 
-		public PlayerBaseState(PlayerContext ctx, PlayerStateFactory factory, MovementState stateFlag, Action exitAction = null)
+		public BaseState(PlayerContext ctx, StateFactory factory, MovementState stateFlag, Action exitAction = null)
 		{
 			Ctx = ctx;
 			Factory = factory;
@@ -108,7 +108,7 @@ namespace Assets.Scripts.PlayerStateMachine
 		/// </summary>
 		/// <param name="newState">The state to switch to. Can pass in null to correctly change the pointers to this state in the super/sub states, which <see cref="ExitState(StateSwitchBehaviour)"/> doesn't do.</param>
 		/// <param name="behaviour"></param>
-		protected void SwitchState(PlayerBaseState newState, StateSwitchBehaviour behaviour = StateSwitchBehaviour.SelfAndDownstream)
+		protected void SwitchState(BaseState newState, StateSwitchBehaviour behaviour = StateSwitchBehaviour.SelfAndDownstream)
 		{
 			// Reconfigure sub/super states
 			switch (behaviour)
@@ -179,7 +179,7 @@ namespace Assets.Scripts.PlayerStateMachine
 		/// <param name="newStates">The states to switch to. Must include at least 1 non-null value.</param>
 		/// <param name="behaviour"></param>
 		/// <exception cref="ArgumentNullException"> if <paramref name="newStates"/> is null or all values in <paramref name="newStates"/> are null.</exception>
-		protected void SwitchState(PlayerBaseState[] newStates, StateSwitchBehaviour behaviour = StateSwitchBehaviour.SelfAndDownstream)
+		protected void SwitchState(BaseState[] newStates, StateSwitchBehaviour behaviour = StateSwitchBehaviour.SelfAndDownstream)
 		{
 			if (newStates != null && newStates.Length > 0)
 			{
@@ -241,10 +241,10 @@ namespace Assets.Scripts.PlayerStateMachine
 		public IEnumerator GetEnumerator() => new PlayerBaseStateEnumerator(this);
 		class PlayerBaseStateEnumerator : IEnumerator
 		{
-			private readonly PlayerBaseState original;
+			private readonly BaseState original;
 			public object Current { get; private set; }
 
-			public PlayerBaseStateEnumerator(PlayerBaseState original)
+			public PlayerBaseStateEnumerator(BaseState original)
 			{
 				this.original = original ?? throw new ArgumentNullException();
 				Current = null;
@@ -252,7 +252,7 @@ namespace Assets.Scripts.PlayerStateMachine
 
 			public bool MoveNext()
 			{
-				Current = (Current == null) ? original : ((PlayerBaseState)Current).SubState;
+				Current = (Current == null) ? original : ((BaseState)Current).SubState;
 				return Current != null;
 			}
 
@@ -280,12 +280,12 @@ namespace Assets.Scripts.PlayerStateMachine
 		/// <summary>
 		/// Attempts to have all sub and super states in the chain exit, with the exception of the base state.
 		/// </summary>
-		/// <remarks>May cause desyncs if <see cref="PlayerBaseState.SuperState"/> == null and <see cref="PlayerBaseState.this"/> != <see cref="PlayerBaseState._ctx.CurrentBaseState"/>.</remarks>
+		/// <remarks>May cause desyncs if <see cref="BaseState.SuperState"/> == null and <see cref="BaseState.this"/> != <see cref="BaseState._ctx.CurrentBaseState"/>.</remarks>
 		AllButBase,
 		/// <summary>
 		/// Attempts to have all sub and super states in the chain exit, with no exceptions.
 		/// </summary>
-		/// <remarks>Must be used with either <see cref="PlayerBaseState.SwitchState(PlayerBaseState, StateSwitchBehaviour)"/> or by manually setting the new <see cref="PlayerContext.CurrentBaseState"/> after usage.</remarks>
+		/// <remarks>Must be used with either <see cref="BaseState.SwitchState(BaseState, StateSwitchBehaviour)"/> or by manually setting the new <see cref="PlayerContext.CurrentBaseState"/> after usage.</remarks>
 		All,
 	}
 }

@@ -3,9 +3,9 @@ using UnityEngine;
 
 namespace Assets.Scripts.PlayerStateMachine
 {
-	public class PlayerJumpState : PlayerBaseState
+	public class JumpState : BaseState
 	{
-		public PlayerJumpState(PlayerContext ctx, PlayerStateFactory factory) 
+		public JumpState(PlayerContext ctx, StateFactory factory) 
 			: base(ctx, factory, MovementState.Jumping)
 		{
 			jumpForce = Ctx.MvmtSettings.jumpForce;

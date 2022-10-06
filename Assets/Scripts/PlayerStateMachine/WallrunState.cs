@@ -3,9 +3,9 @@ using UnityEngine;
 
 namespace Assets.Scripts.PlayerStateMachine
 {
-	public class PlayerWallrunState : PlayerBaseState
+	public class WallrunState : BaseState
 	{
-		public PlayerWallrunState(PlayerContext ctx, PlayerStateFactory factory)
+		public WallrunState(PlayerContext ctx, StateFactory factory)
 			: base(ctx, factory, MovementState.Wallrunning)
 		{
 			void ExitWallrunning()
@@ -49,11 +49,11 @@ namespace Assets.Scripts.PlayerStateMachine
 				hangTime <= 0 ||
 				(Ctx.Velocity.x >= 0 && wallrunStartDir < 0) ||
 				(Ctx.Velocity.x <= 0 && wallrunStartDir > 0))
-				SwitchState((PlayerBaseState)null, StateSwitchBehaviour.SelfAndDownstream);
+				SwitchState((BaseState)null, StateSwitchBehaviour.SelfAndDownstream);
 			else if (Ctx.JumpButton.InputPressedOnThisFrame)
 			{
 				Factory.JumpState.JumpForce = Ctx.MvmtSettings.wallJumpForce;
-				SwitchState(new PlayerBaseState[] { Factory.JumpState }, StateSwitchBehaviour.All);
+				SwitchState(new BaseState[] { Factory.JumpState }, StateSwitchBehaviour.All);
 			}
 			// Update
 			else

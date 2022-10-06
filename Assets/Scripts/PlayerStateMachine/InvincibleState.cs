@@ -2,9 +2,9 @@
 
 namespace Assets.Scripts.PlayerStateMachine
 {
-	public class PlayerInvincibleState : PlayerBaseState
+	public class InvincibleState : BaseState
 	{
-		public PlayerInvincibleState(PlayerContext ctx, PlayerStateFactory factory)
+		public InvincibleState(PlayerContext ctx, StateFactory factory)
 			: base(ctx, factory, MovementState.Invincible)
 		{
 			void ExitInvincible()

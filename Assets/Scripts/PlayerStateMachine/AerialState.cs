@@ -3,9 +3,9 @@
 namespace Assets.Scripts.PlayerStateMachine
 {
 	// TODO: Implement and Integrate AerialState
-	public class PlayerAerialState : PlayerBaseState
+	public class AerialState : BaseState
 	{
-		public PlayerAerialState(PlayerContext ctx, PlayerStateFactory factory) : base(ctx, factory, MovementState.Aerial)
+		public AerialState(PlayerContext ctx, StateFactory factory) : base(ctx, factory, MovementState.Aerial)
 		{
 			void ExitAerial()
 			{

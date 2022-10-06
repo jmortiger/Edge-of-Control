@@ -51,8 +51,7 @@ namespace Assets.Scripts
 		#region Camera Stuff
 		public CinemachineVirtualCamera myCam;
 		public Camera cam;
-		[Expandable]
-		public CameraSettings cameraSettings;
+		[Expandable] public CameraSettings cameraSettings;
 		#endregion
 		PlayerContext _ctx;
 		[ContextMenu("Assign Scene References")]

@@ -2,9 +2,9 @@
 
 namespace Assets.Scripts.PlayerStateMachine
 {
-	public class PlayerStumbleState : PlayerBaseState
+	public class StumbleState : BaseState
 	{
-		public PlayerStumbleState(PlayerContext ctx, PlayerStateFactory factory)
+		public StumbleState(PlayerContext ctx, StateFactory factory)
 			: base(ctx, factory, MovementState.Stumbling)
 		{
 			void ExitStumbling()

@@ -11,7 +11,7 @@ namespace Assets.Scripts.PlayerStateMachine
 	{
 		#region Initialization
 		private PlayerContext(Player player) => MyPlayer = player;
-		public static Tuple<PlayerContext, PlayerStateFactory> CreateStateMachine(Player player, bool initialize = true)
+		public static Tuple<PlayerContext, StateFactory> CreateStateMachine(Player player, bool initialize = true)
 		{
 			var ctx = new PlayerContext(player);
 			ctx.StateFactory = new(ctx);
@@ -19,7 +19,7 @@ namespace Assets.Scripts.PlayerStateMachine
 				ctx.StateFactory.InitializeStateMachine();
 			return new(ctx, ctx.StateFactory);
 		}
-		//public void InitializeStateMachine() => StateFactory.InitializeStateMachine();
+		public void InitializeStateMachine() => StateFactory.InitializeStateMachine();
 		#endregion
 		#region Aliases
 		public Player MyPlayer { get; private set; }
@@ -41,9 +41,9 @@ namespace Assets.Scripts.PlayerStateMachine
 		public CollisionState[] CollisionStateBuffer { get => MyPlayer.CollisionStateBuffer; }
 		#endregion
 		#region State Machine
-		public PlayerStateFactory StateFactory { get; private set; }
-		public PlayerBaseState CurrentBaseState { get; set; }
-		public PlayerBaseState CurrentDisjointState { get; set; }
+		public StateFactory StateFactory { get; private set; }
+		public BaseState CurrentBaseState { get; set; }
+		public BaseState CurrentDisjointState { get; set; }
 
 		#region State
 		public MovementState movementState;// { get => MyPlayer.MState; set => MyPlayer.MState = value; }
@@ -90,7 +90,7 @@ namespace Assets.Scripts.PlayerStateMachine
 			if (e != null)
 				Iterate(e);*/
 			Debug.Assert(CurrentBaseState != null, "STATE MACHINE ENTERED INVALID STATE: CurrentBaseState == null");
-			foreach (PlayerBaseState state in StateFactory)
+			foreach (BaseState state in StateFactory)
 			{
 				Debug.Assert(state?.SuperState == null || state?.SuperState?.SubState == state, $"STATE MACHINE DESYNC: {state}.SuperState.SubState != {state}");
 				Debug.Assert(state?.SubState == null || state?.SubState?.SuperState == state, $"STATE MACHINE DESYNC: {state}.SubState.SuperState != {state}");

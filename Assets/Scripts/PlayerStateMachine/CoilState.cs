@@ -3,9 +3,9 @@ using UnityEngine;
 
 namespace Assets.Scripts.PlayerStateMachine
 {
-	public class PlayerCoilState : PlayerBaseState
+	public class CoilState : BaseState
 	{
-		public PlayerCoilState(PlayerContext ctx, PlayerStateFactory factory) : base(ctx, factory, MovementState.Coiling)
+		public CoilState(PlayerContext ctx, StateFactory factory) : base(ctx, factory, MovementState.Coiling)
 		{
 			void ExitCoil()
 			{

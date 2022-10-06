@@ -3,9 +3,9 @@ using UnityEngine;
 
 namespace Assets.Scripts.PlayerStateMachine
 {
-	public class PlayerFallState : PlayerBaseState
+	public class FallState : BaseState
 	{
-		public PlayerFallState(PlayerContext ctx, PlayerStateFactory factory) : base(ctx, factory, MovementState.Falling) { }
+		public FallState(PlayerContext ctx, StateFactory factory) : base(ctx, factory, MovementState.Falling) { }
 
 		#region Abstract Method Implementations
 		public override void EnterState()
@@ -59,7 +59,7 @@ namespace Assets.Scripts.PlayerStateMachine
 					!Ctx.movementState.HasFlag(MovementState.Invincible))
 			{
 				if (Ctx.Input.IsPressed(InputNames.DownAction))
-					SwitchState(new PlayerBaseState[] { Factory.GroundState, Factory.RollState }, StateSwitchBehaviour.All);
+					SwitchState(new BaseState[] { Factory.GroundState, Factory.RollState }, StateSwitchBehaviour.All);
 				else
 					SwitchState(Factory.StumbleState, StateSwitchBehaviour.All);
 			}

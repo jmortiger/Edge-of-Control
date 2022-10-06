@@ -2,6 +2,7 @@
 
 namespace Assets.Scripts
 {
+	// TODO: Refactor to use unity package
 	public class DamageIndicator : MonoBehaviour
 	{
 		//private float SpriteWidth { get => SpriteRenderer.sprite.bounds.size.x; }

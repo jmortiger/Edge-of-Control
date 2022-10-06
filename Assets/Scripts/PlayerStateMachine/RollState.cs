@@ -2,9 +2,9 @@
 
 namespace Assets.Scripts.PlayerStateMachine
 {
-	public class PlayerRollState : PlayerBaseState
+	public class RollState : BaseState
 	{
-		public PlayerRollState(PlayerContext ctx, PlayerStateFactory factory)
+		public RollState(PlayerContext ctx, StateFactory factory)
 			: base(ctx, factory, MovementState.Rolling)
 		{
 			void ExitRolling()

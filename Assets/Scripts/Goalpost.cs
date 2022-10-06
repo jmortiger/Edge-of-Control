@@ -7,8 +7,7 @@ namespace Assets.Scripts
 	public class Goalpost : MonoBehaviour
 	{
 		public event EventHandler GoalReached;
-		[Expandable]
-		public LevelData levelData;
+		[Expandable] public LevelData levelData;
 
 		#region Scene References
 		public TMP_Text timerText;
@@ -56,10 +55,7 @@ namespace Assets.Scripts
 			if (cleared && myTime <= levelData.PlayerTimeLimit)
 				clearedInTime = true;
 			if (!clearedInTime && myTime > levelData.PlayerTimeLimit)
-			{
-				Debug.LogWarning($"Failed to clear level in expected {levelData.PlayerTimeLimit} seconds.");
-				timerText.color = Color.red;
-			}
+				timerText.color = Color.red;//Debug.LogWarning($"Failed to clear level in expected {levelData.PlayerTimeLimit} seconds.");
 			else if (clearedInTime)
 				timerText.color = Color.green;
 		}

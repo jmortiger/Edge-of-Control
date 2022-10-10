@@ -148,8 +148,7 @@ namespace Assets.Scripts
 		// TODO: Display aerial chain
 		void FixedUpdate()
 		{
-			_ctx.UpdateStates_DEBUG();
-			//DirectStateManagement();
+			_ctx.UpdateStates_DEBUG(); //DirectStateManagement();
 
 			#region After state is handled
 			// Change Cam Size
@@ -177,7 +176,7 @@ namespace Assets.Scripts
 		#region Flags
 		[SerializeField] MovementState[] movementStateBuffer = new MovementState[10];
 		[SerializeField] MovementState movementState = MovementState.None;
-		public MovementState MState { get => movementState; }
+		public MovementState MState { get => /*movementState*/(_ctx is not null) ? _ctx.movementState : movementState; }
 		public CollisionState[] CollisionStateBuffer { get => collisionStateBuffer; }
 		[SerializeField] CollisionState[] collisionStateBuffer = new CollisionState[10];
 		[SerializeField] CollisionState collisionState = CollisionState.None;
@@ -1042,7 +1041,7 @@ namespace Assets.Scripts
 				var rcResults = new RaycastHit2D[1];
 				var numResults = Physics2D.Raycast(_posAtLastCheck, Vector2.down, GlobalConstants.GroundLayer, rcResults);
 				_lastDist = (numResults > 0) ? rcResults[0].distance : float.NaN;
-				_lastDist -= (accountForCollider) ? collider.bounds.extents.y : 0; // Assumes collider not offset
+				_lastDist -= accountForCollider ? collider.bounds.extents.y : 0; // Assumes collider not offset
 			}
 			return _lastDist;
 		}

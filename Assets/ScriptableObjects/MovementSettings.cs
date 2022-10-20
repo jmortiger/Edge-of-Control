@@ -59,6 +59,14 @@ namespace Assets.ScriptableObjects
 		[Tooltip("The force applied when using the movement actions.")]
 		public Vector2 moveForce = new(1f, 1f);
 
+		#region Max Speed
+		[Tooltip("Should speed be clamped within a range of values?")]
+		public bool clampSpeed = false;
+		[Tooltip("Provided clampSpeed is true, what is the max SPEED (NOT velocity)?")]
+		[VectorRange(0f, 1000f, 0f, 1000f)]
+		public Vector2 maxSpeed = new(20f, 20f);
+		#endregion
+
 		#region Unique Aerial And Grounded Movement
 		[Tooltip("If true, use the aerial and grounded move forces instead of their generic equivalents.")]
 		public bool isAerialAndGroundedMovementUnique = false;
@@ -73,10 +81,11 @@ namespace Assets.ScriptableObjects
 		public Vector2 moveForceWallrun = new(1f, 0);
 		#endregion
 
+		#region State Timer Lengths
 		[Tooltip("How long does a stumble last?")]
 		[Range(.0001f, 20f)]
 		public float stumbleTimerLength = 1f;
-		
+
 		[Tooltip("How long does invincibility last?")]
 		[Range(.0001f, 20f)]
 		public float invincibleTimerLength = 1f;
@@ -84,6 +93,7 @@ namespace Assets.ScriptableObjects
 		[Tooltip("How long do coils (curling when aerial to clear obstacles) last?")]
 		[Range(.0001f, 10f)]
 		public float coilTimerLength = 1f;
+		#endregion
 
 		[Tooltip("If the velocity's y component is greater than this (absolute value), landing on the ground w/o rolling will cause them to stumble.")]
 		[Range(float.MinValue, 0)]

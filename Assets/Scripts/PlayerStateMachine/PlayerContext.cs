@@ -58,6 +58,12 @@ namespace Assets.Scripts.PlayerStateMachine
 		{
 			CurrentBaseState?.UpdateState();
 			CurrentDisjointState?.UpdateState();
+
+			if (MvmtSettings.clampSpeed)
+				MyPlayer.rb.velocity = new(
+					Mathf.Clamp(MyPlayer.rb.velocity.x, -MvmtSettings.maxSpeed.x, MvmtSettings.maxSpeed.x), 
+					Mathf.Clamp(MyPlayer.rb.velocity.y, -MvmtSettings.maxSpeed.y, MvmtSettings.maxSpeed.y));
+
 			moveVector = Vector2.positiveInfinity;
 
 			// Slide new state onto buffer

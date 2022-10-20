@@ -1,4 +1,5 @@
 ﻿using Assets.ScriptableObjects;
+using JMor.EditorScripts.Utility;
 using Syrus.Plugins.ChartEditor;
 using UnityEditor;
 using UnityEngine;

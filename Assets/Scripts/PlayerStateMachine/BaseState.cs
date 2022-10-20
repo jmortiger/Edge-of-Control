@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace Assets.Scripts.PlayerStateMachine
 {
+	// TODO: Pull Aliases from Ctx into here?
 	public abstract class BaseState : IEnumerable
 	{
 		#region Fields

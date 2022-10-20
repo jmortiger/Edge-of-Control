@@ -2,6 +2,7 @@ using Assets.ScriptableObjects;
 using Assets.Scripts.PlayerStateMachine;
 using Assets.Scripts.Utility;
 using Cinemachine;
+using JMor.Utility;
 using System;
 using System.Collections.Generic;
 using TMPro;
@@ -108,7 +109,17 @@ namespace Assets.Scripts
 			//rendererInitialDimensions = spriteRenderer.bounds.size;
 
 			(_ctx, _) = PlayerContext.CreateStateMachine(this, true);
+
+			delayedStart = () =>
+			{
+				UpdateBoostMeter(movementSettings.boostRunCost); // TODO: Test
+				delayedStart = null;
+			};
 		}
+		/// <summary>
+		/// Used for initialization that must be done after Start.
+		/// </summary>
+		private Action delayedStart;
 		#endregion
 
 		#region Jump, Boost, & DownAction Checks and Update
@@ -117,6 +128,7 @@ namespace Assets.Scripts
 		public readonly ButtonInfo<InputNames> downActionButton	= new(InputNames.DownAction);
 		void Update()
 		{
+			delayedStart?.Invoke();
 			// Poll input
 			jumpButton		.Update/*_DEBUG*/(input);
 			boostButton		.Update/*_DEBUG*/(input);
@@ -138,7 +150,6 @@ namespace Assets.Scripts
 		// TODO: Troubleshoot landing on enemies problem.
 		// TODO: Tweak wall run
 		// TODO: Check for refactors from Velocity to Cached Velocity.
-		// TODO: Add boost run
 		// TODO: Add auditory feedback for fatal/damaging falls (like Mirror's Edge).
 		// TODO: Add 2-stage jump w/ 2nd stage having increased gravity (https://youtu.be/ep_9RtAbwog?t=154)
 		// TODO: Switch from physics-based movement to scripted movement?
@@ -152,9 +163,6 @@ namespace Assets.Scripts
 
 			#region After state is handled
 			// Change Cam Size
-			//myCam.m_Lens.OrthographicSize = cameraSettings.isOrthographicSizeFunctionActive ? 
-			//	cameraSettings.GetTargetOrthographicSize(Velocity, transform.position, GlobalConstants.GroundLayer) :
-			//	cameraSettings.defaultOrthographicSize;
 			cameraSettings.UpdateCamera(myCam, /*Velocity, */transform.position, GlobalConstants.GroundLayer);
 
 			// Update speed display after application of forces.
@@ -168,9 +176,17 @@ namespace Assets.Scripts
 			boostButton		.AdvanceToNextFrame/*_DEBUG*/();
 			downActionButton.AdvanceToNextFrame/*_DEBUG*/();
 
+			// Update velocity caches
 			cachedVelocity = preCollisionVelocity = Velocity;
 			#endregion
 		}
+#if JMOR_EXPANDABLE
+		private void OnDrawGizmosSelected()
+		{
+			Debug.Log("Package Installed");
+		}
+		
+#endif
 
 		#region State
 		#region Flags
@@ -199,7 +215,9 @@ namespace Assets.Scripts
 		float coilTimer = 0;
 		#endregion
 		#endregion
+#pragma warning disable IDE0051 // Remove unused private members
 		void DirectStateManagement()
+#pragma warning restore IDE0051 // Remove unused private members
 		{
 			#region Methods
 			Vector2 BasicMovement(Vector2 moveForce)
@@ -852,6 +870,11 @@ namespace Assets.Scripts
 
 		// TODO: boostMeter and score uint weirdness check
 		#region Boost Meter
+		/// <summary>
+		/// Increments the <see cref="boostMeter"/> and the <see cref="boostMeterUI"/> based on the given value.
+		/// </summary>
+		/// <param name="delta">The amount to add to the <see cref="boostMeter"/>.</param>
+		/// <remarks>To subtract an amount instead of adding, use a negative value for <paramref name="delta"/>.</remarks>
 		public void UpdateBoostMeter(int delta)
 		{
 			if (delta < 0)
@@ -1032,19 +1055,55 @@ namespace Assets.Scripts
 
 		#region PlayerDistanceFromGround
 		private Vector3 _posAtLastCheck = new(float.NaN, float.NaN, float.NaN);
-		private float _lastDist = float.NaN;
+		private readonly RaycastHit2D[] _lastGroundcast = new RaycastHit2D[1];
+		private float LastDist { get => (default(RaycastHit2D) != _lastGroundcast[0]) ? _lastGroundcast[0].distance : float.NaN; }
 		public float PlayerDistanceFromGround(bool accountForCollider = true)
 		{
-			if (transform.position != _posAtLastCheck)
+			if (transform.position != _posAtLastCheck/*transform.position.ApproximatelyTry(_posAtLastCheck, 1e-04)*/)
 			{
 				_posAtLastCheck = transform.position;
-				var rcResults = new RaycastHit2D[1];
-				var numResults = Physics2D.Raycast(_posAtLastCheck, Vector2.down, GlobalConstants.GroundLayer, rcResults);
-				_lastDist = (numResults > 0) ? rcResults[0].distance : float.NaN;
-				_lastDist -= accountForCollider ? collider.bounds.extents.y : 0; // Assumes collider not offset
+				if (Physics2D.Raycast(_posAtLastCheck, Vector2.down, GlobalConstants.GroundLayer, _lastGroundcast) <= 0)
+					return float.NaN;
 			}
-			return _lastDist;
+			return LastDist - (accountForCollider ? collider.bounds.extents.y : 0); // Assumes collider not offset
 		}
+		#region General Cast result caching; may invest in later
+		//private const int CACHED_RESULTS = 3;
+		//private readonly ContactFilter2D[] _lastContactFilters = new ContactFilter2D[CACHED_RESULTS];
+		//private readonly Vector3[] _lastPositions = new Vector3[CACHED_RESULTS] { Vector3.positiveInfinity, Vector3.positiveInfinity, Vector3.positiveInfinity };
+		//private readonly RaycastHit2D[] _lastCast = new RaycastHit2D[CACHED_RESULTS];
+		//private float LastDistGeneral { get => (default(RaycastHit2D) != _lastGroundcast[0]) ? _lastGroundcast[0].distance : float.NaN; }
+		//public float PlayerDistanceFrom(ContactFilter2D filter, bool accountForCollider = true)
+		//{
+		//	for (int i = 0; i < CACHED_RESULTS; i++)
+		//	{
+		//		if (_lastContactFilters[i].Equals(filter))
+		//		{
+		//			if (_lastPositions[i] != transform.position)
+		//			{
+		//				_lastPositions[i] = transform.position;
+		//				var rcResults = new RaycastHit2D[1];
+		//				if (Physics2D.Raycast(_posAtLastCheck, Vector2.down, GlobalConstants.GroundLayer, rcResults) <= 0)
+		//				{
+		//					_lastCast[i] = default;
+		//					return float.NaN;
+		//				}
+		//			}
+		//			else
+		//			{
+		//				return float.NaN;
+		//			}
+		//		}
+		//	}
+		//	if ()
+		//	{
+		//		_posAtLastCheck = transform.position;
+		//		if (Physics2D.Raycast(_posAtLastCheck, Vector2.down, GlobalConstants.GroundLayer, _lastCast) <= 0)
+		//			return float.NaN;
+		//	}
+		//	return LastDist - (accountForCollider ? collider.bounds.extents.y : 0); // Assumes collider not offset
+		//}
+		#endregion
 		#endregion
 	}
 }

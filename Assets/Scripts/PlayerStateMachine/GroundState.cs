@@ -1,4 +1,5 @@
 ﻿using Assets.Scripts.Utility;
+using UnityEngine;
 
 namespace Assets.Scripts.PlayerStateMachine
 {
@@ -46,6 +47,7 @@ namespace Assets.Scripts.PlayerStateMachine
 			#endregion
 
 			#region Update State
+			// If rolling (or potentially some other states), normal grounded movement is ignored. Otherwise, perform my normal movement.
 			if (!Ctx.movementState.HasFlag(MovementState.Rolling))
 			{
 				Ctx.moveVector = Ctx.moveVector.IsFinite() ? Ctx.moveVector : Ctx.BasicMovement(Ctx.MoveForceGround);
@@ -65,6 +67,12 @@ namespace Assets.Scripts.PlayerStateMachine
 						Ctx.particleSystem.Stop();
 				}
 				//Debug.Log($"isPlaying:{aSource.isPlaying}");
+				// TODO: Test added boost run
+				if (Ctx.MyPlayer.boostButton.InputPressedOnThisFrame && /*Ctx.boostConsumable && */Ctx.MyPlayer.boostMeter >= Ctx.MvmtSettings.boostRunCost && Ctx.moveVector.x != 0)
+				{
+					var dir = Ctx.moveVector.Round();
+					Ctx.Rb.AddForce(dir * Ctx.MvmtSettings.boostRunImpulse, ForceMode2D.Impulse);
+				}
 			}
 			SubState?.UpdateState();
 			#endregion

@@ -7,7 +7,7 @@ namespace Assets.Scripts
 	public class Goalpost : MonoBehaviour
 	{
 		public event EventHandler GoalReached;
-		[Expandable] public LevelData levelData;
+		[JMor.Utility.Expandable] public LevelData levelData;
 
 		#region Scene References
 		public TMP_Text timerText;

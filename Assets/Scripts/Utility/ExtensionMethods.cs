@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Controls;
@@ -8,13 +8,67 @@ namespace Assets.Scripts.Utility
 	public static class ExtensionMethods
 	{
 		#region Vector Helpers
+		#region For Both
 		public static bool IsFinite(this Vector2 v) => float.IsFinite(v.x) && float.IsFinite(v.y);
 		public static bool IsFinite(this Vector3 v) => float.IsFinite(v.x) && float.IsFinite(v.y) && float.IsFinite(v.z);
 
+		#region Approximate Distance
+		// TODO: Implement for V3 + V2 and V2 + V3
+		public static bool Approximately(this Vector2 v1, Vector2 v2, float maxDistance = Vector2.kEpsilon)
+		{
+			if (!v1.IsFinite())
+				throw new ArgumentException("One of the vectors is not finite.", "v1");
+			else if (!v2.IsFinite())
+				throw new ArgumentException("One of the vectors is not finite.", "v2");
+			return ApproximatelyTry(v1, v2, maxDistance);
+		}
+		public static bool ApproximatelyTry(this Vector2 v1, Vector2 v2, float maxDistance = Vector2.kEpsilon)
+		{
+			float Δx = v1.x - v2.x, Δy = v1.y - v2.y;
+			float magnitudeSquared = Δx * Δx + Δy * Δy;
+			return magnitudeSquared < maxDistance * maxDistance;
+		}
+
+		public static bool Approximately(this Vector3 v1, Vector3 v2, float maxDistance = Vector3.kEpsilon)
+		{
+			if (!v1.IsFinite())
+				throw new ArgumentException("One of the vectors is not finite.", "v1");
+			else if (!v2.IsFinite())
+				throw new ArgumentException("One of the vectors is not finite.", "v2");
+			return ApproximatelyTry(v1, v2, maxDistance);
+		}
+		public static bool ApproximatelyTry(this Vector3 v1, Vector3 v2, float maxDistance = Vector3.kEpsilon)
+		{
+			float Δx = v1.x - v2.x, Δy = v1.y - v2.y, Δz = v1.z - v2.z;
+			float magnitudeSquared = Δx * Δx + Δy * Δy + Δz * Δz;
+			return magnitudeSquared < maxDistance * maxDistance;
+		}
+
+		#endregion
+		#region Round Vector
+		public static Vector2 Round(this Vector2 input, bool roundX = true, bool roundY = true)
+		{
+			if (roundX) input.x = Mathf.Round(input.x);
+			if (roundY) input.y = Mathf.Round(input.y);
+			return input;
+		}
+
+		public static Vector3 Round(this Vector3 input, bool roundX = true, bool roundY = true, bool roundZ = true)
+		{
+			if (roundX) input.x = Mathf.Round(input.x);
+			if (roundY) input.y = Mathf.Round(input.y);
+			if (roundZ) input.z = Mathf.Round(input.z);
+			return input;
+		}
+		#endregion
+		#endregion
+
+		#region Fill in the holes for Vector2
 		public static Vector2 RotateTowards(this Vector2 from, Vector2 to, float maxRadiansDelta, float maxMagnitudeDelta = 0f)
 		{
 			return Vector3.RotateTowards(from, to, maxRadiansDelta, maxMagnitudeDelta);
 		}
+		#endregion
 		#endregion
 
 		#region PlayerInput Helpers

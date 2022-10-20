@@ -18,9 +18,11 @@ MonoBehaviour:
   rollExitSpeed: 3
   rollTimerLength: 1
   jumpForce: {x: 0.5, y: 9}
+  wallJumpForce: {x: 0.5, y: 5}
   conservedVelocity: 0.6
   boostJumpCost: 50
   boostRunCost: 20
+  boostRunImpulse: {x: 5, y: 0}
   moveForce: {x: 10, y: 1}
   isAerialAndGroundedMovementUnique: 0
   moveForceGround: {x: 10, y: 1}

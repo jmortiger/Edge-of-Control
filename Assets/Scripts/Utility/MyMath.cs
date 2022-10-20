@@ -450,6 +450,23 @@ namespace Assets.Scripts.Utility
 		}
 		#endregion
 
+		#region Round Vector
+		public static Vector2 Round(Vector2 input, bool roundX = true, bool roundY = true)
+		{
+			if (roundX) input.x = Mathf.Round(input.x);
+			if (roundY) input.y = Mathf.Round(input.y);
+			return input;
+		}
+
+		public static Vector3 Round(Vector3 input, bool roundX = true, bool roundY = true, bool roundZ = true)
+		{
+			if (roundX) input.x = Mathf.Round(input.x);
+			if (roundY) input.y = Mathf.Round(input.y);
+			if (roundZ) input.z = Mathf.Round(input.z);
+			return input;
+		}
+		#endregion
+
 		public static Vector2[] ComputeCircle(
 			float radius, 
 			int totalPoints = 32, 

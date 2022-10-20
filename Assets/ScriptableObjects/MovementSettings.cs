@@ -1,3 +1,4 @@
+using JMor.Utility;
 using UnityEngine;
 
 namespace Assets.ScriptableObjects
@@ -24,6 +25,7 @@ namespace Assets.ScriptableObjects
 		#endregion
 
 		#region Jump Fields
+		// TODO: Refactor: Force -> Impulse
 		public Vector2 jumpForce = new(.5f, 15f);
 		public Vector2 wallJumpForce = new(.5f, 5f);
 		[Tooltip("The amount of velocity conserved when jumping off enemies' heads.")]
@@ -36,8 +38,24 @@ namespace Assets.ScriptableObjects
 		public int boostJumpCost = 50;
 		[Range(0, 200)]
 		public int boostRunCost = 20;
+		//[Range(0, 100)]
+		//public float boostRunImpulseX = 10f;
+		//[Range(0, 100)]
+		//public float boostRunImpulseY = 0f;
+		//public Vector2 boostRunImpulse
+		//{
+		//	get => new(boostRunImpulseX, boostRunImpulseY);
+		//	set
+		//	{
+		//		boostRunImpulseX = 0;
+		//	}
+		//}
+		public float boostRunImpulseX { get => boostRunImpulse.x; set => boostRunImpulse = new(value, boostRunImpulseY); }
+		public float boostRunImpulseY { get => boostRunImpulse.y; set => boostRunImpulse = new(boostRunImpulseX, value); }
+		[VectorRange(fMinX: 0, fMaxX: 100, fMinY: 0, fMaxY: 100, bClamp: true)]
+		public Vector2 boostRunImpulse = new(5f, 0f);
 		#endregion
-		
+
 		[Tooltip("The force applied when using the movement actions.")]
 		public Vector2 moveForce = new(1f, 1f);
 

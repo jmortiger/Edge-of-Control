@@ -1,6 +1,4 @@
-﻿//using Assets.Scripts.Utility;
-using JMor.Utility;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace Assets.ScriptableObjects
 {
@@ -8,6 +6,6 @@ namespace Assets.ScriptableObjects
 	public class SceneCollection : ScriptableObject
 	{
 		public string collectionName;
-		public SceneWrapper[] scenes;
+		public JMor.Utility.SceneWrapper[] scenes;
 	}
 }

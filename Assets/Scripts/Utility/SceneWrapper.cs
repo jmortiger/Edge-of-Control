@@ -1,16 +1,13 @@
-﻿using System;
-using UnityEngine;
-
-namespace Assets.Scripts.Utility
+﻿namespace Assets.Scripts.Utility
 {
-	[Serializable]
+	[System.Serializable]
 	public class SceneWrapper
 	{
 		public string scenePath;
 		public string sceneName;
 		public bool forceReload;
 		#region For Editor Property Drawer Use Only
-		[SerializeField]
+		[UnityEngine.SerializeField]
 		string newScenePath = "";
 		#endregion
 	}

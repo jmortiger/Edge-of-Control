@@ -1,4 +1,5 @@
 ﻿using Assets.Scripts.Utility;
+using JMor.Utility;
 using UnityEngine;
 
 namespace Assets.Scripts.PlayerStateMachine
@@ -21,7 +22,7 @@ namespace Assets.Scripts.PlayerStateMachine
 			get
 			{
 				var t = jumpForce;
-				jumpForce = Ctx.MvmtSettings.jumpForce;
+				jumpForce = Ctx.MvmtSettings.jumpForce; // TODO: Should jump force be reset here?
 				return t;
 			}
 			set => jumpForce = value;
@@ -35,7 +36,7 @@ namespace Assets.Scripts.PlayerStateMachine
 			if (!Ctx.moveVector.IsFinite())
 				moveVector = Ctx.GetMoveVector();
 			moveVector.y = 1;
-			var fApplied = Vector2.Scale(moveVector, /*Ctx.MvmtSettings.j*/JumpForce);
+			var fApplied = Vector2.Scale(moveVector, JumpForce);
 			jumpForce = Ctx.MvmtSettings.jumpForce; // Reset jump force
 			Ctx.Rb.AddForce(fApplied, ForceMode2D.Impulse);
 			Ctx.particleSystem.Emit(30);

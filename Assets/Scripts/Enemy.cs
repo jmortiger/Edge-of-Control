@@ -2,6 +2,7 @@
 using UnityEngine;
 
 using Assets.Scripts.Utility;
+using JMor.Utility;
 
 namespace Assets.Scripts
 {

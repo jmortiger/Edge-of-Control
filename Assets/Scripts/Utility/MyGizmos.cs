@@ -1,4 +1,5 @@
-﻿using System;
+﻿using JMor.Utility;
+using System;
 using UnityEngine;
 
 namespace Assets.Scripts.Utility

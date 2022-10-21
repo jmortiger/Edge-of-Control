@@ -493,6 +493,22 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: -8304432625287696403, guid: 0b9cea0e484831f4f8a120bdea413127, type: 3}
+      propertyPath: test.scenePath
+      value: Assets/Scenes/SceneManagement.unity
+      objectReference: {fileID: 0}
+    - target: {fileID: -8304432625287696403, guid: 0b9cea0e484831f4f8a120bdea413127, type: 3}
+      propertyPath: test2.scenePath
+      value: Assets/Samples/Input System/1.3.0/Visualizers/GamepadVisualizer.unity
+      objectReference: {fileID: 0}
+    - target: {fileID: -8304432625287696403, guid: 0b9cea0e484831f4f8a120bdea413127, type: 3}
+      propertyPath: test.newScenePath
+      value: Assets/Scenes/SceneManagement.unity
+      objectReference: {fileID: 0}
+    - target: {fileID: -8304432625287696403, guid: 0b9cea0e484831f4f8a120bdea413127, type: 3}
+      propertyPath: test2.newScenePath
+      value: Assets/Samples/Input System/1.3.0/Visualizers/GamepadVisualizer.unity
+      objectReference: {fileID: 0}
     - target: {fileID: 1492775944482201786, guid: 0b9cea0e484831f4f8a120bdea413127, type: 3}
       propertyPath: m_Name
       value: Player

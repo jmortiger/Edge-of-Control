@@ -2,6 +2,7 @@
 using Assets.Scripts.PlayerStateMachine;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using JMor.Utility;
 
 namespace Assets.Scripts
 {

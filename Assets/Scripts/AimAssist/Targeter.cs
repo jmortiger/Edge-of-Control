@@ -1,9 +1,9 @@
+using Assets.Scripts.Utility;
+using JMor.Utility;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
-
-using Assets.Scripts.Utility;
 
 namespace Assets.Scripts.AimAssist
 {

@@ -1,4 +1,5 @@
-﻿using Assets.Scripts.Utility;
+﻿//using Assets.Scripts.Utility;
+using JMor.Utility;
 using UnityEngine;
 
 namespace Assets.ScriptableObjects

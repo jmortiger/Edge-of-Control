@@ -4,6 +4,7 @@ using UnityEngine.Pool;
 using Random = UnityEngine.Random;
 
 using Assets.Scripts.Utility;
+using JMor.Utility;
 
 namespace Assets.Scripts
 {

@@ -1,4 +1,5 @@
 ﻿using Assets.Scripts.Utility;
+using JMor.Utility;
 using UnityEngine.InputSystem;
 
 namespace Assets.Scripts
